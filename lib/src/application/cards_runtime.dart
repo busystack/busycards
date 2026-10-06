@@ -85,6 +85,7 @@ final class CardsRuntime {
   DavCancellationToken? _nextcloudSetup;
   ContactsCancellationToken? _davSetup;
   Timer? _timer;
+  Future<void>? _closeFuture;
   bool _closed = false;
   Future<void> _enrollmentTail = Future<void>.value();
   Stream<void> get changes => store.changes;
@@ -126,7 +127,7 @@ final class CardsRuntime {
   Future<void> start({bool schedule = true}) async {
     await _recoverEnrollments();
     await directory.restore();
-    for (final account in await store.read((tx) => tx.accounts())) {
+    for (final account in await store.read((tx) async => tx.accounts())) {
       if (!account.enabled) continue;
       try {
         await _bind(account);
@@ -144,7 +145,7 @@ final class CardsRuntime {
   }
 
   Future<void> synchronizeAll() async {
-    for (final account in await store.read((tx) => tx.accounts())) {
+    for (final account in await store.read((tx) async => tx.accounts())) {
       if (account.enabled)
         unawaited(synchronizeAccount(account.id).catchError((Object _) {}));
     }
@@ -174,9 +175,11 @@ final class CardsRuntime {
   }
 
   bool isSyncing(String id) => _busy.containsKey(id);
-  Future<void> _accountError(String id, String? error) => store.write((tx) {
-    final account = tx.account(id);
-    if (account != null) tx.putAccount(account.copy(errorCode: error));
+  Future<void> _accountError(String id, String? error) => store.write((
+    tx,
+  ) async {
+    final account = await tx.account(id);
+    if (account != null) await tx.putAccount(account.copy(errorCode: error));
   });
 
   Future<ContactAccount> connectGoogle({
@@ -514,11 +517,11 @@ final class CardsRuntime {
       await secrets.write('connection/' + id, oldConfig);
     if (await secrets.read('connection/' + id) != oldConfig)
       throw StateError('Enrollment rollback requires recovery');
-    await store.write((tx) {
+    await store.write((tx) async {
       if (oldAccount == null)
-        tx.removeAccount(id);
+        await tx.removeAccount(id);
       else
-        tx.putAccount(oldAccount);
+        await tx.putAccount(oldAccount);
     });
   }
 
@@ -536,7 +539,7 @@ final class CardsRuntime {
     final key = 'connection/' + account.id,
         old = await secrets.read('connection/' + account.id);
     final encoded = jsonEncode(config);
-    final oldAccount = await store.read((tx) => tx.account(account.id));
+    final oldAccount = await store.read((tx) async => tx.account(account.id));
     final journalText = await secrets.read('enrollments-v1');
     final journal = journalText == null
         ? <String, dynamic>{}
@@ -555,7 +558,7 @@ final class CardsRuntime {
       await secrets.write(key, encoded);
       if (await secrets.read(key) != encoded)
         throw StateError('Credential persistence failed');
-      await store.write((tx) => tx.putAccount(account));
+      await store.write((tx) async => tx.putAccount(account));
       await _bind(account);
       journal[account.id] = {...snapshot, 'committed': true};
       await _writeEnrollmentJournal(journal);
@@ -674,7 +677,7 @@ final class CardsRuntime {
       accountId: account.id,
       client: CardDavClient(resources),
       cachedRecord: (identity) =>
-          store.read<ContactRecord?>((tx) => tx.contact(identity)),
+          store.read<ContactRecord?>((tx) async => tx.contact(identity)),
       readOnly: config['requestedReadOnly'] == true,
       disposeTransport: httpClient.close,
     );
@@ -683,7 +686,7 @@ final class CardsRuntime {
   CardDavContactsProvider? cardDavProvider(String accountId) =>
       _carddav[accountId];
   Future<List<ContactGroup>> googleGroups(String id) async {
-    final account = await store.read((tx) => tx.account(id));
+    final account = await store.read((tx) async => tx.account(id));
     final oauth = _google[id];
     if (account == null || oauth == null) return [];
     // Reading actual provider concepts; mutations still go through the directory.
@@ -708,19 +711,19 @@ final class CardsRuntime {
   }
 
   Future<void> enable(String id) async {
-    final account = await store.read((tx) => tx.account(id));
+    final account = await store.read((tx) async => tx.account(id));
     if (account == null) return;
     final enabled = account.copy(
       enabled: true,
       generation: account.generation + 1,
     );
-    await store.write((tx) => tx.putAccount(enabled));
+    await store.write((tx) async => tx.putAccount(enabled));
     await _bind(enabled);
     await synchronizeAccount(id);
   }
 
   Future<void> remove(String id) async {
-    final account = await store.read((tx) => tx.account(id));
+    final account = await store.read((tx) async => tx.account(id));
     final config = await secrets.read('connection/' + id);
     await _drain(id);
     // Remove only BusyCards-owned credentials; no provider-wide consent revocation.
@@ -753,7 +756,7 @@ final class CardsRuntime {
     await secrets.delete('connection/' + id);
     if (await secrets.read('connection/' + id) != null)
       throw StateError('Credential removal failed; reconnect or retry');
-    await store.write((tx) => tx.removeAccount(id));
+    await store.write((tx) async => tx.removeAccount(id));
   }
 
   Future<void> _drain(String id) async {
@@ -945,7 +948,15 @@ final class CardsRuntime {
       );
     return Uint8List.fromList(bytes);
   });
-  Future<void> close() async {
+  Future<void> close() {
+    final existing = _closeFuture;
+    if (existing != null) return existing;
+    final closing = Zone.root.run(_close);
+    _closeFuture = closing;
+    return closing;
+  }
+
+  Future<void> _close() async {
     _closed = true;
     _timer?.cancel();
     await cancelAuthorization();

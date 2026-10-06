@@ -96,41 +96,65 @@ final class ContactsDatabase implements ContactsStore {
 
   final Database _database;
   final _changes = StreamController<void>.broadcast();
-  bool _closed = false, _inTransaction = false;
+  Future<void> _tail = Future<void>.value();
+  Future<void>? _closeFuture;
+  bool _closed = false;
   @override
   Stream<void> get changes => _changes.stream;
   @override
-  Future<T> read<T>(T Function(ContactsReadTransaction) action) async =>
-      _transaction(action, false);
+  Future<T> read<T>(Future<T> Function(ContactsReadTransaction) action) =>
+      _enqueue<T, ContactsReadTransaction>(action, false);
   @override
-  Future<T> write<T>(T Function(ContactsWriteTransaction) action) async =>
-      _transaction(action, true);
-  T _transaction<T>(T Function(_Transaction) action, bool writable) {
-    if (_closed) throw StateError('Contacts database closed');
-    if (_inTransaction)
-      throw StateError('Nested store transactions are not supported');
-    _inTransaction = true;
-    _database.execute(writable ? 'BEGIN IMMEDIATE' : 'BEGIN');
-    final tx = _Transaction(_database, writable);
-    try {
-      final result = action(tx);
-      if (result is Future)
-        throw StateError('Transaction callbacks must be synchronous');
-      _database.execute('COMMIT');
-      if (writable) _changes.add(null);
-      return result;
-    } catch (_) {
-      _database.execute('ROLLBACK');
-      rethrow;
-    } finally {
-      tx.active = false;
-      _inTransaction = false;
+  Future<T> write<T>(Future<T> Function(ContactsWriteTransaction) action) =>
+      _enqueue<T, ContactsWriteTransaction>(action, true);
+
+  Future<T> _enqueue<T, Transaction extends ContactsReadTransaction>(
+    Future<T> Function(Transaction) action,
+    bool writable,
+  ) {
+    if (_closeFuture != null || _closed) {
+      return Future<T>.error(StateError('Contacts database closed'));
     }
+    final result = Completer<T>();
+    // The serialization gate must stay independent of a caller's test/UI zone.
+    // A paused zone must not strand an already-open SQL transaction or block
+    // unrelated shutdown work behind it.
+    final done = Zone.root.run(Completer<void>.new);
+    final previous = _tail;
+    _tail = done.future;
+    unawaited(
+      Zone.root.run(() async {
+        await previous;
+        final tx = _Transaction(_database, writable);
+        _database.execute(writable ? 'BEGIN IMMEDIATE' : 'BEGIN');
+        try {
+          final value = await action(tx as Transaction);
+          _database.execute('COMMIT');
+          if (writable) _changes.add(null);
+          result.complete(value);
+        } catch (error, stackTrace) {
+          _database.execute('ROLLBACK');
+          result.completeError(error, stackTrace);
+        } finally {
+          tx.active = false;
+          done.complete();
+        }
+      }),
+    );
+    return result.future;
   }
 
   @override
-  Future<void> close() async {
-    if (_closed) return;
+  Future<void> close() {
+    final existing = _closeFuture;
+    if (existing != null) return existing;
+    final closing = Zone.root.run(_close);
+    _closeFuture = closing;
+    return closing;
+  }
+
+  Future<void> _close() async {
+    await _tail;
     _closed = true;
     _database.execute('PRAGMA wal_checkpoint(TRUNCATE)');
     _database.close();
@@ -169,13 +193,13 @@ final class _Transaction implements ContactsWriteTransaction {
     id,
   ]).firstOrNull;
   @override
-  List<ContactAccount> accounts() =>
+  Future<List<ContactAccount>> accounts() async =>
       _list('SELECT data FROM accounts ORDER BY id', ContactAccount.fromJson);
   @override
-  ContactAccount? account(String id) =>
+  Future<ContactAccount?> account(String id) async =>
       _one('accounts', 'id', id, ContactAccount.fromJson);
   @override
-  List<ContactSource> sources({String? accountId}) => _list(
+  Future<List<ContactSource>> sources({String? accountId}) async => _list(
     'SELECT data FROM sources' +
         (accountId == null ? '' : ' WHERE account=?') +
         ' ORDER BY id',
@@ -183,10 +207,10 @@ final class _Transaction implements ContactsWriteTransaction {
     accountId == null ? [] : [accountId],
   );
   @override
-  ContactSource? source(String key) =>
+  Future<ContactSource?> source(String key) async =>
       _one('sources', 'id', key, ContactSource.fromJson);
   @override
-  ContactRecord? contact(ContactIdentity identity) =>
+  Future<ContactRecord?> contact(ContactIdentity identity) async =>
       _one('contacts', 'id', identity.key, contactRecordFromJson);
   (String, List<Object?>) _filter(
     String? account,
@@ -228,13 +252,13 @@ final class _Transaction implements ContactsWriteTransaction {
           ? 'contacts_account_order'
           : 'contacts_name_order');
   @override
-  List<ContactRecord> contacts({
+  Future<List<ContactRecord>> contacts({
     String? accountId,
     String? sourceKey,
     String query = '',
     int limit = 100,
     int offset = 0,
-  }) {
+  }) async {
     if (limit < 0 || limit > 1000 || offset < 0 || query.length > 1024)
       throw ArgumentError('Bounded search required');
     final filter = _filter(accountId, sourceKey, query);
@@ -249,13 +273,13 @@ final class _Transaction implements ContactsWriteTransaction {
   }
 
   @override
-  List<ContactProjection> projections({
+  Future<List<ContactProjection>> projections({
     String? accountId,
     String? sourceKey,
     String query = '',
     int limit = 100,
     int offset = 0,
-  }) {
+  }) async {
     if (limit < 0 || limit > 1000 || offset < 0 || query.length > 1024)
       throw ArgumentError('Bounded search required');
     final filter = _filter(accountId, sourceKey, query);
@@ -270,7 +294,11 @@ final class _Transaction implements ContactsWriteTransaction {
   }
 
   @override
-  int count({String? accountId, String? sourceKey, String query = ''}) {
+  Future<int> count({
+    String? accountId,
+    String? sourceKey,
+    String query = '',
+  }) async {
     if (query.length > 1024) throw ArgumentError('Bounded search required');
     _check();
     final filter = _filter(accountId, sourceKey, query);
@@ -284,7 +312,10 @@ final class _Transaction implements ContactsWriteTransaction {
   }
 
   @override
-  List<ContactMutation> mutations({String? accountId, String? sourceKey}) {
+  Future<List<ContactMutation>> mutations({
+    String? accountId,
+    String? sourceKey,
+  }) async {
     final clauses = <String>[], args = <Object?>[];
     if (accountId != null) {
       clauses.add('account=?');
@@ -304,10 +335,10 @@ final class _Transaction implements ContactsWriteTransaction {
   }
 
   @override
-  ContactSyncState? syncState(String sourceKey) =>
+  Future<ContactSyncState?> syncState(String sourceKey) async =>
       _one('sync_state', 'source', sourceKey, ContactSyncState.fromJson);
   @override
-  List<ContactDraft> drafts() =>
+  Future<List<ContactDraft>> drafts() async =>
       _list('SELECT data FROM drafts ORDER BY id', ContactDraft.fromJson);
   void _put(String table, Map<String, Object?> columns, String keyColumn) {
     _check(write: true);
@@ -331,18 +362,18 @@ final class _Transaction implements ContactsWriteTransaction {
   }
 
   @override
-  void putAccount(ContactAccount account) => _put('accounts', {
+  Future<void> putAccount(ContactAccount account) async => _put('accounts', {
     'id': account.id,
     'data': jsonEncode(account.toJson()),
   }, 'id');
   @override
-  void putSource(ContactSource source) => _put('sources', {
+  Future<void> putSource(ContactSource source) async => _put('sources', {
     'id': source.key,
     'account': source.accountId,
     'data': jsonEncode(source.toJson()),
   }, 'id');
   @override
-  void putContact(ContactRecord contact, {String? seenScan}) {
+  Future<void> putContact(ContactRecord contact, {String? seenScan}) async {
     final identity = contact.identity;
     final source = jsonEncode([
       identity.accountId,
@@ -379,17 +410,17 @@ final class _Transaction implements ContactsWriteTransaction {
   }
 
   @override
-  void deleteContact(ContactIdentity identity) {
+  Future<void> deleteContact(ContactIdentity identity) async {
     _check(write: true);
     db.execute('DELETE FROM contacts WHERE id=?', [identity.key]);
   }
 
   @override
-  void pruneUnseen(
+  Future<void> pruneUnseen(
     String sourceKey,
     String scanId,
     Set<String> protectedIdentities,
-  ) {
+  ) async {
     _check(write: true);
     // Parameters stay bounded even when many pending records are protected.
     final rows = db.select(
@@ -403,43 +434,45 @@ final class _Transaction implements ContactsWriteTransaction {
   }
 
   @override
-  void putMutation(ContactMutation mutation) => _put('mutations', {
-    'id': mutation.id,
-    'account': mutation.accountId,
-    'source': mutation.sourceKey,
-    'data': jsonEncode(mutation.toJson()),
-  }, 'id');
+  Future<void> putMutation(ContactMutation mutation) async =>
+      _put('mutations', {
+        'id': mutation.id,
+        'account': mutation.accountId,
+        'source': mutation.sourceKey,
+        'data': jsonEncode(mutation.toJson()),
+      }, 'id');
   @override
-  void deleteMutation(String id) {
+  Future<void> deleteMutation(String id) async {
     _check(write: true);
     db.execute('DELETE FROM mutations WHERE id=?', [id]);
   }
 
   @override
-  void putSyncState(ContactSyncState state) => _put('sync_state', {
-    'source': state.sourceKey,
-    'data': jsonEncode(state.toJson()),
-  }, 'source');
+  Future<void> putSyncState(ContactSyncState state) async => _put(
+    'sync_state',
+    {'source': state.sourceKey, 'data': jsonEncode(state.toJson())},
+    'source',
+  );
   @override
-  void putDraft(ContactDraft draft) => _put('drafts', {
+  Future<void> putDraft(ContactDraft draft) async => _put('drafts', {
     'id': draft.id,
     'source': draft.sourceKey,
     'data': jsonEncode(draft.toJson()),
   }, 'id');
   @override
-  void deleteDraft(String id) {
+  Future<void> deleteDraft(String id) async {
     _check(write: true);
     db.execute('DELETE FROM drafts WHERE id=?', [id]);
   }
 
   @override
-  void removeAccount(String id) {
+  Future<void> removeAccount(String id) async {
     _check(write: true);
     db.execute('DELETE FROM accounts WHERE id=?', [id]);
   }
 
   @override
-  void removeSource(String key) {
+  Future<void> removeSource(String key) async {
     _check(write: true);
     db.execute('DELETE FROM mutations WHERE source=?', [key]);
     db.execute('DELETE FROM sources WHERE id=?', [key]);

@@ -105,14 +105,13 @@ class _ContactsWorkspaceState extends State<ContactsWorkspace> {
     final generation = ++_generation;
     try {
       final snapshot = await widget.runtime.store.read(
-        (tx) => (
-          tx.accounts(),
-          tx.sources(),
-          tx
-              .mutations()
+        (tx) async => (
+          await tx.accounts(),
+          await tx.sources(),
+          (await tx.mutations())
               .where((m) => m.state != ContactMutationState.confirmed)
               .toList(),
-          tx.drafts(),
+          await tx.drafts(),
         ),
       );
       if (!mounted || generation != _generation) return;
@@ -122,19 +121,19 @@ class _ContactsWorkspaceState extends State<ContactsWorkspace> {
         _selected.clear();
       }
       final data = await widget.runtime.store.read(
-        (tx) => (
-          tx.projections(
+        (tx) async => (
+          await tx.projections(
             sourceKey: _sourceKey,
             query: _query.text,
             limit: _pageSize,
           ),
-          tx.count(sourceKey: _sourceKey, query: _query.text),
+          await tx.count(sourceKey: _sourceKey, query: _query.text),
         ),
       );
       if (!mounted || generation != _generation) return;
       if (_detail != null) {
         final refreshed = await widget.runtime.store.read<ContactRecord?>(
-          (tx) => tx.contact(_detail!.identity),
+          (tx) async => tx.contact(_detail!.identity),
         );
         if (!mounted || generation != _generation) return;
         _detail = refreshed;
@@ -213,7 +212,7 @@ class _ContactsWorkspaceState extends State<ContactsWorkspace> {
     setState(() => _loadingDetail = true);
     try {
       final record = await widget.runtime.store.read<ContactRecord?>(
-        (tx) => tx.contact(contact.identity),
+        (tx) async => tx.contact(contact.identity),
       );
       if (mounted && generation == _detailGeneration)
         setState(() {
@@ -332,9 +331,14 @@ class _ContactsWorkspaceState extends State<ContactsWorkspace> {
         : _detail == null
         ? <ContactIdentity>[]
         : [_detail!.identity];
-    return widget.runtime.store.read(
-      (tx) => identities.map(tx.contact).whereType<ContactRecord>().toList(),
-    );
+    return widget.runtime.store.read((tx) async {
+      final records = <ContactRecord>[];
+      for (final identity in identities) {
+        final record = await tx.contact(identity);
+        if (record != null) records.add(record);
+      }
+      return records;
+    });
   }
 
   Future<void> _delete() async {
@@ -561,7 +565,7 @@ class _ContactsWorkspaceState extends State<ContactsWorkspace> {
       final record = draft.identity == null
           ? null
           : await widget.runtime.store.read<ContactRecord?>(
-              (tx) => tx.contact(draft.identity!),
+              (tx) async => tx.contact(draft.identity!),
             );
       if (draft.identity != null && record == null) {
         setState(
@@ -1389,12 +1393,11 @@ class _PendingChangesDialogState extends State<PendingChangesDialog> {
 
   Future<void> _load() async {
     final data = await widget.runtime.store.read(
-      (tx) => (
-        tx
-            .mutations()
+      (tx) async => (
+        (await tx.mutations())
             .where((m) => m.state != ContactMutationState.confirmed)
             .toList(),
-        tx.drafts(),
+        await tx.drafts(),
       ),
     );
     if (mounted)

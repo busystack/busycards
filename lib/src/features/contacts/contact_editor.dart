@@ -38,6 +38,7 @@ class _ContactEditorState extends State<ContactEditor> {
   final _types = <Map<String, TextEditingController>, List<String>>{};
   Timer? _draftTimer;
   bool _saving = false;
+  bool _completed = false;
   String? _error;
   late final ContactProjection _original;
   TextEditingController _field(String key, String value) {
@@ -359,7 +360,15 @@ class _ContactEditorState extends State<ContactEditor> {
           : await widget.runtime.directory.update(widget.base!, patch);
       // The durable journal owns recovery after dispatch, including uncertainty.
       await widget.runtime.directory.deleteDraft(widget.draftId);
-      if (mounted) Navigator.pop(context, mutation);
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _completed = true;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) Navigator.pop(context, mutation);
+        });
+      }
     } catch (error) {
       if (mounted)
         setState(() {
@@ -449,7 +458,7 @@ class _ContactEditorState extends State<ContactEditor> {
     return BusyCardsWindowCloseGuard(
       onCloseRequested: _canClose,
       child: PopScope(
-        canPop: !_dirty && !_saving,
+        canPop: _completed || !_dirty && !_saving,
         onPopInvokedWithResult: (popped, result) {
           if (!popped) unawaited(_cancel());
         },

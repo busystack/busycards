@@ -75,12 +75,78 @@ void main() {
         nextcloud: true,
       );
       await runtime.synchronizeAccount(account.id);
+      final snapshot = await store.read(
+        (tx) async =>
+            (await tx.accounts(), await tx.sources(), await tx.count()),
+      );
+      expect(snapshot.$1, hasLength(1));
+      expect(snapshot.$2, isNotEmpty);
+      expect(snapshot.$3, greaterThan(0));
     });
   }
 
   Finder field(String label) => find.byWidgetPredicate(
     (widget) => widget is TextField && widget.decoration?.labelText == label,
   );
+  Future<void> waitFor(
+    WidgetTester tester,
+    Finder finder, {
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    final deadline = DateTime.now().add(timeout);
+    while (finder.evaluate().isEmpty) {
+      if (DateTime.now().isAfter(deadline)) {
+        final visibleText = tester
+            .widgetList<Text>(find.byType(Text))
+            .map((widget) => widget.data)
+            .whereType<String>()
+            .toList();
+        throw TestFailure(
+          'Timed out waiting for $finder; visible text: $visibleText',
+        );
+      }
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump(const Duration(milliseconds: 10));
+    }
+  }
+
+  Future<void> waitForAbsent(
+    WidgetTester tester,
+    Finder finder, {
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    final deadline = DateTime.now().add(timeout);
+    while (finder.evaluate().isNotEmpty) {
+      if (DateTime.now().isAfter(deadline)) {
+        throw TestFailure('Timed out waiting for $finder to disappear');
+      }
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump(const Duration(milliseconds: 10));
+    }
+  }
+
+  Future<void> waitForCount(
+    WidgetTester tester,
+    Finder finder,
+    int count, {
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    final deadline = DateTime.now().add(timeout);
+    while (finder.evaluate().length != count) {
+      if (DateTime.now().isAfter(deadline)) {
+        throw TestFailure('Timed out waiting for $count matches of $finder');
+      }
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump(const Duration(milliseconds: 10));
+    }
+  }
+
   testWidgets(
     'ordinary empty shell opens and Settings exposes every production connection',
     (tester) async {
@@ -104,22 +170,23 @@ void main() {
     (tester) async {
       await connect(tester);
       await showApp(tester);
+      await waitFor(tester, find.text('Zoë 李'));
       final search = find.byType(TextField).first;
       await tester.enterText(search, 'Zoë');
       await tester.pump(const Duration(milliseconds: 150));
-      await tester.pumpAndSettle();
+      await waitFor(tester, find.text('Zoë 李'));
       expect(find.text('Zoë 李'), findsWidgets);
       await tester.enterText(search, 'no-match');
       await tester.pump(const Duration(milliseconds: 150));
-      await tester.pumpAndSettle();
+      await waitForAbsent(tester, find.text('Zoë 李'));
       expect(find.text('Zoë 李'), findsNothing);
       await tester.enterText(search, '');
       await tester.pump(const Duration(milliseconds: 150));
-      await tester.pumpAndSettle();
+      await waitFor(tester, find.text('Zoë 李'));
       await tester.tap(find.text('Read only').first);
-      await tester.pumpAndSettle();
+      await waitForCount(tester, find.text('Zoë 李'), 1);
       await tester.tap(find.text('Zoë 李').first);
-      await tester.pumpAndSettle();
+      await waitFor(tester, find.text('Edit'));
       final edit = tester.widget<Widget>(
         find
             .ancestor(
@@ -140,12 +207,13 @@ void main() {
       );
       await connect(tester);
       await showApp(tester);
+      await waitFor(tester, find.text('Zoë 李'));
       await tester.tap(find.text('Personal').first);
-      await tester.pumpAndSettle();
+      await waitFor(tester, find.text('Zoë 李'));
       await tester.tap(find.text('Zoë 李').first);
-      await tester.pumpAndSettle();
+      await waitFor(tester, find.text('Edit'));
       await tester.tap(find.text('Edit'));
-      await tester.pumpAndSettle();
+      await waitFor(tester, find.byType(ContactEditor));
       expect(find.byType(ContactEditor), findsOneWidget);
       await tester.ensureVisible(field('Notes'));
       await tester.enterText(field('Notes'), '');
@@ -156,36 +224,42 @@ void main() {
           FieldEditKind.clear,
         );
       });
-      await tester.runAsync(() async {
-        await tester.tap(find.text('Save').last);
-        // Production parsing uses a real isolate; allow its event loop to run.
-        final deadline = DateTime.now().add(const Duration(seconds: 5));
-        while (true) {
-          final saved = await store.read(
-            (tx) => tx.contacts().firstWhere(
-              (r) => r.identity.sourceId.endsWith('/book/'),
+      await tester.tap(find.text('Save').last);
+      // Production parsing uses a real isolate while store notifications drive
+      // widget-zone reads. Alternate real time and widget pumps so neither
+      // queue is artificially paused by the test binding.
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      ContactRecord? edited;
+      while (true) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        await tester.pump(const Duration(milliseconds: 10));
+        final state = await tester.runAsync(
+          () => store.read(
+            (tx) async => (
+              (await tx.contacts()).firstWhere(
+                (record) => record.identity.sourceId.endsWith('/book/'),
+              ),
+              await tx.drafts(),
             ),
-          );
-          final drafts = await store.read((tx) => tx.drafts());
-          if (saved.projection.notes.isEmpty && drafts.isEmpty) break;
-          if (DateTime.now().isAfter(deadline))
-            throw StateError('Production save did not complete');
-          await Future<void>.delayed(const Duration(milliseconds: 10));
-        }
-      });
-      await tester.pumpAndSettle();
-      await tester.runAsync(() async {
-        final edited = await store.read(
-          (tx) => tx.contacts().firstWhere(
-            (r) => r.identity.sourceId.endsWith('/book/'),
           ),
         );
-        expect(edited.projection.notes, '');
-        expect((edited as CardDavContactRecord).vcard.text('X-FUTURE'), 'keep');
-        expect(edited.vcard.values('NOTE'), hasLength(2));
-        expect(edited.vcard.values('NOTE').last.text, 'Additional note');
-        expect(edited.vcard.values('NOTE').last.parameter('X-PARAM'), ['keep']);
-      });
+        if (state!.$1.projection.notes.isEmpty && state.$2.isEmpty) {
+          edited = state.$1;
+          break;
+        }
+        if (DateTime.now().isAfter(deadline)) {
+          throw StateError('Production save did not complete');
+        }
+      }
+      await waitForAbsent(tester, find.byType(ContactEditor));
+      expect(edited.projection.notes, '');
+      final card = edited as CardDavContactRecord;
+      expect(card.vcard.text('X-FUTURE'), 'keep');
+      expect(card.vcard.values('NOTE'), hasLength(2));
+      expect(card.vcard.values('NOTE').last.text, 'Additional note');
+      expect(card.vcard.values('NOTE').last.parameter('X-PARAM'), ['keep']);
     },
   );
   testWidgets(
@@ -194,7 +268,7 @@ void main() {
       await connect(tester);
       await tester.runAsync(() async {
         final base = await store.read(
-          (tx) => tx.contacts().firstWhere(
+          (tx) async => (await tx.contacts()).firstWhere(
             (r) => r.identity.sourceId.endsWith('/book/'),
           ),
         );
@@ -205,10 +279,11 @@ void main() {
         );
       });
       await showApp(tester);
+      await waitFor(tester, find.text('1 pending changes'));
       await tester.tap(find.text('1 pending changes'));
-      await tester.pumpAndSettle();
+      await waitFor(tester, find.text('Review base, local and remote'));
       await tester.tap(find.text('Review base, local and remote'));
-      await tester.pumpAndSettle();
+      await waitFor(tester, find.text('Your selected changes'));
       expect(find.text('Base'), findsOneWidget);
       expect(find.text('Your selected changes'), findsOneWidget);
       expect(find.text('Remote'), findsOneWidget);
@@ -220,6 +295,7 @@ void main() {
     (tester) async {
       await connect(tester);
       await showApp(tester);
+      await waitFor(tester, find.text('Zoë 李'));
       await tester.tap(find.byTooltip('New contact'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Personal').last);

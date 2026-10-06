@@ -50,19 +50,18 @@ class _CardsSettingsScreenState extends State<CardsSettingsScreen> {
 
   Future<void> _load() async {
     final generation = ++_generation;
-    final result = await widget.runtime.store.read(
-      (tx) => (
-        tx.accounts(),
-        tx.sources(),
-        {
-          for (final source in tx.sources())
-            source.key: (
-              tx.count(sourceKey: source.key),
-              tx.syncState(source.key),
-            ),
-        },
-      ),
-    );
+    final result = await widget.runtime.store.read((tx) async {
+      final accounts = await tx.accounts();
+      final sources = await tx.sources();
+      final states = <String, (int, ContactSyncState?)>{};
+      for (final source in sources) {
+        states[source.key] = (
+          await tx.count(sourceKey: source.key),
+          await tx.syncState(source.key),
+        );
+      }
+      return (accounts, sources, states);
+    });
     if (mounted && generation == _generation)
       setState(() {
         _accounts = result.$1;

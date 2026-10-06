@@ -35,6 +35,18 @@ R3 rechecked on 2026-10-04: [Dart workspace guidance](https://dart.dev/tools/pub
 
 Additional endpoint check on 2026-10-04: [Graph list contactFolders](https://learn.microsoft.com/en-us/graph/api/user-list-contactfolders?view=graph-rest-1.0) describes the folder collection in the default Contacts folder. The implementation enumerates that collection and each childFolders relationship independently from default `/me/contacts`, without inventing a childFolderCount property or a default-folder delta endpoint. Provider folder fixtures cover this discovery. vCard primary-edit regressions retain additional NOTE and alternate FN/N values and warn before a conversion would drop them; the actual UI clear/save test also checks the retained note and parameters.
 
+## Milestone 2 contract recheck
+
+Rechecked **2026-10-06** against the current primary pages:
+
+| Source | Applied rule | Affected implementation / test |
+|---|---|---|
+| [Drift transactions](https://drift.simonbinder.eu/dart_api/transactions/) | Transaction work is awaited, the transaction remains active across asynchronous gaps, and update notifications become visible after commit. | Shared asynchronous `ContactsStore`; BusyCards serialized SQLCipher adapter; delayed rollback/concurrent-isolation/store restart regressions. |
+| [Drift isolates](https://drift.simonbinder.eu/isolates/) | `NativeDatabase.createInBackground` is asynchronous, and unrelated database connections do not automatically coordinate watchers. | BusyBox/BusyMax adapters must use their existing database boundary; no second raw connection or preload substitute. |
+| [People connections.list](https://developers.google.com/people/api/rest/v1/people.connections/list) | A sync-token request retains matching request parameters and requests a next sync token. | Existing Google provider request shape retained; no removal of `requestSyncToken: true`. |
+| [Nextcloud WebDAV SEARCH](https://docs.nextcloud.com/server/stable/developer_manual/client_apis/WebDAV/search.html) | Nextcloud uses a DAV `SEARCH` request with an XML body for search and file-ID lookup. | `DavTransferClient.openRead` streamed `SEARCH` support and protocol regression; BusyFiles consumer adoption remains separately gated. |
+| [Dart workspaces](https://dart.dev/tools/pub/workspaces), [package dependencies](https://dart.dev/tools/pub/dependencies) | An ordinary sibling path dependency need not become a workspace member, and its relative path is resolved from the consuming manifest. | Retain BusyFiles' workspace; stage shared repositories as siblings for CI/source packaging. |
+
 ## Milestone 1 correction contracts
 
 Rechecked **2026-10-04 America/Vancouver (2026-10-05 UTC)**. The following rules supersede ambiguous earlier summaries; they describe fixtures/source inspection, never live acceptance.

@@ -34,9 +34,9 @@ Future<void> main(List<String> arguments) async {
     subject: 'fixture-only',
     grantedScopes: {'https://www.googleapis.com/auth/contacts'},
   );
-  await store.write((tx) {
-    tx.putAccount(account);
-    tx.putSource(source);
+  await store.write((tx) async {
+    await tx.putAccount(account);
+    await tx.putSource(source);
   });
   var pages = 0;
   final initialRss = ProcessInfo.currentRss;
@@ -111,9 +111,12 @@ Future<void> main(List<String> arguments) async {
   await directory.synchronize(source.key);
   watch.stop();
   sample.cancel();
-  require(await store.read((tx) => tx.count()) == size, 'Full scan count');
   require(
-    (await store.read((tx) => tx.syncState(source.key)))!.cursor ==
+    await store.read((tx) async => tx.count()) == size,
+    'Full scan count',
+  );
+  require(
+    (await store.read((tx) async => tx.syncState(source.key)))!.cursor ==
         'fixture-complete',
     'Cursor/data commit',
   );
@@ -130,13 +133,15 @@ Future<void> main(List<String> arguments) async {
     searchTimes.add(timing.elapsedMicroseconds);
   }
   searchTimes.sort();
-  final base = await store.read((tx) => tx.contacts(limit: 1).single);
+  final base = await store.read(
+    (tx) async => (await tx.contacts(limit: 1)).single,
+  );
   // Real adapter rollback: even a staged cursor and contact must roll back as one.
   var rolledBack = false;
   try {
-    await store.write<void>((tx) {
-      tx.deleteContact(base.identity);
-      tx.putSyncState(
+    await store.write<void>((tx) async {
+      await tx.deleteContact(base.identity);
+      await tx.putSyncState(
         ContactSyncState(sourceKey: source.key, cursor: 'must-not-commit'),
       );
       throw StateError('fixture rollback');
@@ -145,27 +150,69 @@ Future<void> main(List<String> arguments) async {
     rolledBack = true;
   }
   require(
-    rolledBack && await store.read((tx) => tx.contact(base.identity)) != null,
+    rolledBack &&
+        await store.read((tx) async => tx.contact(base.identity)) != null,
     'Rollback preserves source',
   );
   require(
-    (await store.read((tx) => tx.syncState(source.key)))!.cursor ==
+    (await store.read((tx) async => tx.syncState(source.key)))!.cursor ==
         'fixture-complete',
     'Rollback preserves cursor',
+  );
+  var delayedRollback = false;
+  try {
+    await store.write<void>((tx) async {
+      await tx.deleteContact(base.identity);
+      await Future<void>.delayed(const Duration(milliseconds: 1));
+      await tx.putSyncState(
+        ContactSyncState(sourceKey: source.key, cursor: 'delayed-rollback'),
+      );
+      throw StateError('delayed rollback');
+    });
+  } catch (_) {
+    delayedRollback = true;
+  }
+  require(
+    delayedRollback &&
+        await store.read((tx) async => tx.contact(base.identity)) != null,
+    'Delayed transaction callback rolls back atomically',
+  );
+  final release = Completer<void>();
+  var concurrentReadStarted = false;
+  final heldWrite = store.write((tx) async {
+    await tx.putSyncState(
+      ContactSyncState(sourceKey: source.key, cursor: 'serialized'),
+    );
+    await release.future;
+  });
+  final concurrentRead = store.read((tx) async {
+    concurrentReadStarted = true;
+    return (await tx.syncState(source.key))!.cursor;
+  });
+  await Future<void>.delayed(Duration.zero);
+  require(
+    !concurrentReadStarted,
+    'Concurrent access cannot interleave across an async transaction gap',
+  );
+  release.complete();
+  await heldWrite;
+  require(
+    await concurrentRead == 'serialized',
+    'Queued transaction observes committed state',
   );
   var notified = 0;
   final subscription = store.changes.listen((_) => notified++);
   try {
-    await store.write<void>((tx) {
-      tx.deleteContact(base.identity);
+    await store.write<void>((tx) async {
+      await tx.deleteContact(base.identity);
       throw StateError('rollback');
     });
   } catch (_) {}
   await Future<void>.delayed(Duration.zero);
   require(notified == 0, 'Rollback must not notify');
   await subscription.cancel();
-  await store.write((tx) {
-    tx.putDraft(
+  await store.write((tx) async {
+    await tx.putDraft(
       ContactDraft(
         id: 'saved-draft',
         sourceKey: source.key,
@@ -173,7 +220,7 @@ Future<void> main(List<String> arguments) async {
         patch: const ContactPatch(notes: FieldEdit.set('Unsaved fixture note')),
       ),
     );
-    tx.putMutation(
+    await tx.putMutation(
       ContactMutation(
         id: 'interrupted',
         accountId: 'fixture',
@@ -188,12 +235,12 @@ Future<void> main(List<String> arguments) async {
     );
   });
   ContactsReadTransaction? escaped;
-  await store.read((tx) {
+  await store.read((tx) async {
     escaped = tx;
   });
   var fenced = false;
   try {
-    escaped!.accounts();
+    await escaped!.accounts();
   } catch (_) {
     fenced = true;
   }
@@ -201,7 +248,8 @@ Future<void> main(List<String> arguments) async {
   var readOnly = false;
   try {
     await store.read(
-      (tx) => (tx as ContactsWriteTransaction).deleteContact(base.identity),
+      (tx) async =>
+          (tx as ContactsWriteTransaction).deleteContact(base.identity),
     );
   } catch (_) {
     readOnly = true;
@@ -228,21 +276,21 @@ Future<void> main(List<String> arguments) async {
   directory = ContactsDirectory(store: store);
   await directory.restore();
   require(
-    await store.read((tx) => tx.count()) == size,
+    await store.read((tx) async => tx.count()) == size,
     'Restart retains contacts',
   );
   require(
-    (await store.read((tx) => tx.mutations())).single.state ==
+    (await store.read((tx) async => tx.mutations())).single.state ==
         ContactMutationState.unknown,
     'Interrupted dispatch is uncertain, never invented success',
   );
   require(
-    (await store.read((tx) => tx.drafts())).single.patch.notes.value ==
+    (await store.read((tx) async => tx.drafts())).single.patch.notes.value ==
         'Unsaved fixture note',
     'Restart retains draft',
   );
   require(
-    (await store.read((tx) => tx.contact(base.identity)))!
+    (await store.read((tx) async => tx.contact(base.identity)))!
             .toJson()
             .toString() ==
         base.toJson().toString(),
@@ -250,22 +298,22 @@ Future<void> main(List<String> arguments) async {
   );
   final secondFile = File(profile.path + '/independent/contacts.sqlite3');
   final second = await ContactsDatabase.open(secondFile, List.filled(32, 8));
-  await second.write((tx) {
-    tx.putAccount(account);
-    tx.putSource(source);
-    tx.putContact(base);
+  await second.write((tx) async {
+    await tx.putAccount(account);
+    await tx.putSource(source);
+    await tx.putContact(base);
   });
-  await store.write((tx) => tx.removeAccount('fixture'));
+  await store.write((tx) async => tx.removeAccount('fixture'));
   require(
-    await store.read((tx) => tx.count()) == 0,
+    await store.read((tx) async => tx.count()) == 0,
     'Account cascade removes only own contacts',
   );
   require(
-    await store.read((tx) => tx.drafts()).then((v) => v.isEmpty),
+    await store.read((tx) async => tx.drafts()).then((v) => v.isEmpty),
     'Own drafts cascade',
   );
   require(
-    await second.read((tx) => tx.count()) == 1,
+    await second.read((tx) async => tx.count()) == 1,
     'Independent instance is unaffected',
   );
   await second.close();

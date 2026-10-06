@@ -113,7 +113,7 @@ void main() {
     final account = await connect();
     await runtime.synchronizeAccount(account.id);
     final base = await store.read(
-      (tx) => tx.contacts().firstWhere(
+      (tx) async => (await tx.contacts()).firstWhere(
         (r) => r.identity.sourceId.endsWith('/book/'),
       ),
     );
