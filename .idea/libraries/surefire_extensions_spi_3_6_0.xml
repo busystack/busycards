@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="surefire-extensions-spi-3.6.0">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/portable-inputs/inputs/maven-repository/org/apache/maven/surefire/surefire-extensions-spi/3.6.0/surefire-extensions-spi-3.6.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

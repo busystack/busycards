@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="commons-lang3-3.19.4">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/helper-maven-repository/org/apache/commons/commons-lang3/3.19.0/commons-lang3-3.19.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

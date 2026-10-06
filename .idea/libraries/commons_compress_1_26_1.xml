@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="commons-compress-1.26.1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/portable-inputs/inputs/maven-repository/org/apache/commons/commons-compress/1.26.1/commons-compress-1.26.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="maven-dependency-analyzer-1.16.4">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/fresh-extraction/portable/inputs/maven-repository/org/apache/maven/shared/maven-dependency-analyzer/1.16.0/maven-dependency-analyzer-1.16.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

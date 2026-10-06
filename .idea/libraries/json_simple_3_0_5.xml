@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="json-simple-3.0.5">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/offline-inputs/inputs/maven-repository/com/github/cliftonlabs/json-simple/3.0.2/json-simple-3.0.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

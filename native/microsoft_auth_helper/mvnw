@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+module_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+properties="$module_dir/.mvn/wrapper/maven-wrapper.properties"
+distribution_url=$(sed -n 's/^distributionUrl=//p' "$properties")
+distribution_checksum=$(sed -n 's/^distributionSha512Sum=//p' "$properties")
+cache_dir="$module_dir/target/wrapper"
+if [ ! -x "$cache_dir/apache-maven-3.10.0/bin/mvn" ]; then
+  mkdir -p "$cache_dir"
+  curl --fail --location --silent --show-error --connect-timeout 30 --max-time 300 "$distribution_url" -o "$cache_dir/maven.zip"
+  printf '%s  %s\n' "$distribution_checksum" "$cache_dir/maven.zip" | sha512sum --check --status
+  unzip -q -o "$cache_dir/maven.zip" -d "$cache_dir"
+fi
+cd "$module_dir"
+exec "$cache_dir/apache-maven-3.10.0/bin/mvn" --strict-checksums \
+  -Daether.transport.apache.connectTimeout=30000 \
+  -Daether.transport.apache.requestTimeout=60000 \
+  -Dmaven.repo.local="${BUSYCARDS_MAVEN_REPOSITORY:-$module_dir/target/maven-repository}" "$@"

@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="msal4j-1.26.3">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/portable-inputs/inputs/maven-repository/com/microsoft/azure/msal4j/1.26.0/msal4j-1.26.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

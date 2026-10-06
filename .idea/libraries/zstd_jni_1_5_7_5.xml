@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="zstd-jni-1.5.7-5">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/offline-inputs/inputs/maven-repository/com/github/luben/zstd-jni/1.5.7-4/zstd-jni-1.5.7-4.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

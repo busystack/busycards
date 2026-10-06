@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="common-java5-3.6.1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/helper-maven-repository/org/apache/maven/surefire/common-java5/3.6.0/common-java5-3.6.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>io.busystack.busycards</groupId><artifactId>microsoft-auth</artifactId><version>1.0.0</version>
+  <name>BusyCards Microsoft authentication helper</name>
+  <properties>
+    <maven.compiler.release>25</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.outputTimestamp>2026-10-02T00:00:00Z</project.build.outputTimestamp>
+  </properties>
+  <dependencies>
+    <dependency><groupId>com.microsoft.azure</groupId><artifactId>msal4j</artifactId><version>1.26.0</version></dependency>
+    <dependency><groupId>com.microsoft.azure</groupId><artifactId>msal4j-persistence-extension</artifactId><version>1.3.0</version></dependency>
+    <!-- Extension 1.3.0 uses StandardCharset from Nimbus; MSAL4J 1.26.0 no longer supplies it. -->
+    <dependency><groupId>com.nimbusds</groupId><artifactId>nimbus-jose-jwt</artifactId><version>10.10</version></dependency>
+    <dependency><groupId>net.java.dev.jna</groupId><artifactId>jna</artifactId><version>5.19.1</version></dependency>
+    <dependency><groupId>net.java.dev.jna</groupId><artifactId>jna-platform</artifactId><version>5.19.1</version></dependency>
+    <dependency><groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId><version>1.7.36</version></dependency>
+    <dependency><groupId>org.slf4j</groupId><artifactId>slf4j-nop</artifactId><version>1.7.36</version><scope>runtime</scope></dependency>
+    <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>6.1.3</version><scope>test</scope></dependency>
+  </dependencies>
+  <dependencyManagement><dependencies>
+    <dependency><groupId>com.microsoft.azure</groupId><artifactId>msal4j</artifactId><version>1.26.0</version></dependency>
+    <dependency><groupId>net.java.dev.jna</groupId><artifactId>jna</artifactId><version>5.19.1</version></dependency>
+    <dependency><groupId>net.java.dev.jna</groupId><artifactId>jna-platform</artifactId><version>5.19.1</version></dependency>
+    <dependency><groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId><version>1.7.36</version></dependency>
+  </dependencies></dependencyManagement>
+  <repositories><repository><id>central</id><url>https://repo.maven.apache.org/maven2</url><snapshots><enabled>false</enabled></snapshots></repository></repositories>
+  <pluginRepositories><pluginRepository><id>central</id><url>https://repo.maven.apache.org/maven2</url><snapshots><enabled>false</enabled></snapshots></pluginRepository></pluginRepositories>
+  <build><finalName>busycards-microsoft-auth</finalName><plugins>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-clean-plugin</artifactId><version>3.5.0</version></plugin>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-resources-plugin</artifactId><version>3.3.1</version></plugin>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.14.1</version></plugin>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.6.0</version><configuration><useModulePath>false</useModulePath><argLine>--enable-native-access=ALL-UNNAMED</argLine></configuration></plugin>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-jar-plugin</artifactId><version>3.4.2</version></plugin>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-enforcer-plugin</artifactId><version>3.6.3</version><executions><execution><id>pins</id><goals><goal>enforce</goal></goals><configuration><rules><requireJavaVersion><version>[25.0.1,)</version></requireJavaVersion><requireReleaseDeps/><requireUpperBoundDeps/><dependencyConvergence/></rules></configuration></execution></executions></plugin>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-dependency-plugin</artifactId><version>3.9.0</version><executions>
+      <execution><id>distribution-jars</id><phase>package</phase><goals><goal>copy-dependencies</goal></goals><configuration><includeScope>runtime</includeScope><outputDirectory>${project.build.directory}/dist/microsoft-auth/jars</outputDirectory></configuration></execution>
+      <execution><id>graph</id><phase>package</phase><goals><goal>tree</goal></goals><configuration><outputFile>${project.build.directory}/dependency-graph.txt</outputFile></configuration></execution>
+    </executions></plugin>
+    <plugin><groupId>org.codehaus.mojo</groupId><artifactId>exec-maven-plugin</artifactId><version>3.6.3</version><executions>
+      <execution><id>runtime-distribution</id><phase>verify</phase><goals><goal>exec</goal></goals><configuration><executable>bash</executable><arguments><argument>${project.basedir}/assemble.sh</argument><argument>${java.home}</argument></arguments></configuration></execution>
+      <execution><id>audit-fixtures</id><phase>verify</phase><goals><goal>exec</goal></goals><configuration><executable>python3</executable><arguments><argument>${project.basedir}/tests/audit_dependencies_test.py</argument></arguments></configuration></execution>
+      <execution><id>dependency-audit</id><phase>verify</phase><goals><goal>exec</goal></goals><configuration><executable>python3</executable><arguments><argument>${project.basedir}/audit_dependencies.py</argument><argument>${project.build.directory}/dependency-graph.txt</argument><argument>${project.build.directory}/dependency-audit.json</argument></arguments></configuration></execution>
+    </executions></plugin>
+  </plugins></build>
+</project>

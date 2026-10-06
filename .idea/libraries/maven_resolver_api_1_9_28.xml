@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="maven-resolver-api-1.9.28">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/offline-inputs/inputs/maven-repository/org/apache/maven/resolver/maven-resolver-api/1.9.27/maven-resolver-api-1.9.27.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

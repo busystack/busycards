@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="jrt-fs">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/fresh-extraction/run2/busycards/native/microsoft_auth_helper/target/dist/microsoft-auth/runtime/lib/jrt-fs.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

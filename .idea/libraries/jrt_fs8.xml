@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="jrt-fs8">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/native/microsoft_auth_helper/target/dist/microsoft-auth/runtime/lib/jrt-fs.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

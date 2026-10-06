@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="maven-shared-utils-3.4.4">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/portable-inputs/inputs/maven-repository/org/apache/maven/shared/maven-shared-utils/3.4.2/maven-shared-utils-3.4.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="plexus-velocity-2.2.1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/portable-inputs/inputs/maven-repository/org/codehaus/plexus/plexus-velocity/2.2.0/plexus-velocity-2.2.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

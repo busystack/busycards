@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="plexus-compiler-manager-2.15.0">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/offline-inputs/inputs/maven-repository/org/codehaus/plexus/plexus-compiler-manager/2.15.0/plexus-compiler-manager-2.15.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

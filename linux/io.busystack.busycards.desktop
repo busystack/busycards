@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=BusyCards
+Comment=Browse and edit your contacts
+Exec=busycards %F
+Icon=io.busystack.busycards
+Terminal=false
+Categories=Office;ContactManagement;
+MimeType=text/vcard;text/x-vcard;
+StartupNotify=true
+StartupWMClass=io.busystack.busycards
+DBusActivatable=false

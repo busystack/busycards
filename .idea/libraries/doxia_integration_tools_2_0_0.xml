@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="doxia-integration-tools-2.0.0">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/offline-inputs/inputs/maven-repository/org/apache/maven/doxia/doxia-integration-tools/2.0.0/doxia-integration-tools-2.0.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

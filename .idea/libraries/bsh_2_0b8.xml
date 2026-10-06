@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="bsh-2.0b8">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/portable-inputs/inputs/maven-repository/org/apache-extras/beanshell/bsh/2.0b6/bsh-2.0b6.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

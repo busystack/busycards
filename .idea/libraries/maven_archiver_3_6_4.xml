@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="maven-archiver-3.6.4">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/offline-inputs/inputs/maven-repository/org/apache/maven/maven-archiver/3.6.2/maven-archiver-3.6.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

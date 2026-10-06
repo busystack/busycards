@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="xz-1.13">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/helper-maven-repository/org/tukaani/xz/1.9/xz-1.9.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

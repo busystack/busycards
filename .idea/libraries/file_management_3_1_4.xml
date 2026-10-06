@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="file-management-3.1.4">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/fresh/busycards/validation/helper-maven-repository/org/apache/maven/shared/file-management/3.1.0/file-management-3.1.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

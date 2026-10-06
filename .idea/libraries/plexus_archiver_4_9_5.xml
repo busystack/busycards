@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="plexus-archiver-4.9.5">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/portable-inputs/inputs/maven-repository/org/codehaus/plexus/plexus-archiver/4.9.2/plexus-archiver-4.9.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

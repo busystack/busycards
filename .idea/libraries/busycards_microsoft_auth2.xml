@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="busycards-microsoft-auth2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/fresh/busycards/native/microsoft_auth_helper/target/busycards-microsoft-auth.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

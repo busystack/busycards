@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="commons-text-1.12.4">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/fresh-extraction/portable/inputs/maven-repository/org/apache/commons/commons-text/1.12.0/commons-text-1.12.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

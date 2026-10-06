@@ -1,0 +1,4206 @@
+import 'dart:async';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:yaru/yaru.dart';
+
+import '../l10n/l10n.dart';
+
+import '../platform/native_menu_service.dart';
+import 'busycards_glyphs.dart';
+import 'busycards_surface_colors.dart';
+import 'common/busycards_design_values.dart';
+
+export 'common/busycards_design_values.dart' show BusyCardsMotion;
+
+abstract final class BusyCardsSpacing {
+  static const double xxs = 2;
+  static const double xs = 4;
+  static const double headerInset = 6;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = kYaruPagePadding;
+  static const double xl = kYaruPagePadding * 1.5;
+  static const double xxl = kYaruPagePadding * 2;
+  static const double tooltipHorizontal = 10;
+  static const double tooltipVertical = 6;
+}
+
+abstract final class BusyCardsRadius {
+  static const double sm = kYaruButtonRadius;
+  static const double tooltip = kYaruButtonRadius;
+  static const double md = kYaruContainerRadius;
+  static const double lg = kYaruContainerRadius;
+  static const double headerButton = kYaruButtonRadius;
+  static const double window = kYaruWindowRadius;
+  static const double pill = 999;
+}
+
+abstract final class BusyCardsSizes {
+  static const double sidebarWidth = 300;
+  static const double detailsWidth = 700;
+  static const double compactDetailsWidth = 700;
+  static const double comboWidth = 220;
+  static const double toolbarHeight = kYaruTitleBarHeight;
+  static const double sidebarRowHeight = 36;
+  static const double iconSm = 16;
+  static const double iconMd = kYaruIconSize;
+  static const double iconLg = 22;
+  static const double headerIconButton = kYaruTitleBarItemHeight;
+  static const double headerIcon = kYaruIconSize;
+  static const double sidebarActionButton = headerIconButton;
+  static const double sidebarActionIcon = headerIcon;
+  static const double popoverActionButton = kYaruTitleBarItemHeight;
+  static const double popoverActionIcon = iconSm;
+  static const double popoverArrowWidth = 18;
+  static const double popoverArrowHeight = 10;
+  static const double tooltipMinHeight = 30;
+}
+
+abstract final class BusyCardsFormLayout {
+  static const double comboInlineMaxFraction = 0.46;
+}
+
+/// BusyCards's single deliberate adjustment to Yaru's surface depth.
+///
+/// Grouped cards need a little more separation from the application canvas.
+/// Floating controls keep the elevations supplied by Yaru; feature widgets
+/// must not define their own elevations or shadow geometry.
+abstract final class BusyCardsElevation {
+  static const double groupedCard = 2;
+}
+
+abstract final class BusyCardsStroke {
+  static const double outline = 1;
+}
+
+abstract final class BusyCardsAlpha {
+  static const double calendarGridLight = 0.10;
+  static const double calendarGridDark = 0.06;
+  static const double groupedRowLightHoverStrength = 0.50;
+  static const double tooltipBackground = 0.80;
+  static const double tooltipBorder = 0.10;
+}
+
+/// Cross-toolkit tooltip visuals.
+///
+/// Flutter chrome and retained GTK surfaces render separate tooltip widgets.
+/// This contract keeps their surface geometry and palette identical while
+/// allowing both toolkits to retain native positioning and accessibility.
+abstract final class BusyCardsTooltipStyle {
+  static final Color background = Colors.black.withValues(
+    alpha: BusyCardsAlpha.tooltipBackground,
+  );
+  static const Color foreground = Colors.white;
+  static final Color border = Colors.white.withValues(
+    alpha: BusyCardsAlpha.tooltipBorder,
+  );
+  static const EdgeInsets padding = EdgeInsets.symmetric(
+    horizontal: BusyCardsSpacing.tooltipHorizontal,
+    vertical: BusyCardsSpacing.tooltipVertical,
+  );
+  static const BorderRadius borderRadius = BorderRadius.all(
+    Radius.circular(BusyCardsRadius.tooltip),
+  );
+  static const BoxConstraints constraints = BoxConstraints(
+    minHeight: BusyCardsSizes.tooltipMinHeight,
+  );
+}
+
+enum BusyCardsPopoverShadowRole { standard, details }
+
+abstract final class BusyCardsShadow {
+  static const double floatingBlur = 24;
+  static const Offset floatingOffset = Offset(0, 8);
+  static const double windowMargin = 32;
+
+  /// The native libadwaita/Yaru card depth used by `.card` and
+  /// `list.boxed-list`.
+  ///
+  /// Flutter's physical elevation shadow is deliberately biased toward the
+  /// bottom edge. Native boxed lists instead combine a quiet perimeter with
+  /// two compact layers, which keeps the top edge legible without making the
+  /// card look detached from the page.
+  static List<BoxShadow> nativeCardShadows(Color semanticShadow) {
+    Color layer(double opacity) {
+      return semanticShadow.withValues(alpha: semanticShadow.a * opacity);
+    }
+
+    // Flutter paints later shadows over earlier ones, so keep the native CSS
+    // perimeter last and the broadest layer first.
+    return [
+      BoxShadow(
+        color: layer(0.03),
+        blurRadius: 6,
+        spreadRadius: 2,
+        offset: const Offset(0, 2),
+      ),
+      BoxShadow(
+        color: layer(0.07),
+        blurRadius: 3,
+        spreadRadius: 1,
+        offset: const Offset(0, 1),
+      ),
+      BoxShadow(color: layer(0.03), spreadRadius: 1),
+    ];
+  }
+
+  static List<BoxShadow> nativeCardShadowsFor(BuildContext context) {
+    final theme = Theme.of(context);
+    return nativeCardShadows(
+      CardTheme.of(context).shadowColor ?? theme.colorScheme.shadow,
+    );
+  }
+
+  /// Current libadwaita popover depth, expressed as native CSS layers.
+  ///
+  /// A physical Material elevation uses a directional spot shadow and is
+  /// therefore a poor match for an anchored Linux popover. These two restrained
+  /// layers mirror libadwaita's popover profile: a defined near edge over a
+  /// broad, low-opacity ambient shadow.
+  static List<BoxShadow> nativePopoverShadows(
+    Color semanticShadow, {
+    BusyCardsPopoverShadowRole role = BusyCardsPopoverShadowRole.standard,
+  }) {
+    Color layer(double opacity) {
+      return semanticShadow.withValues(alpha: semanticShadow.a * opacity);
+    }
+
+    final (ambientBlur, nearBlur) = switch (role) {
+      BusyCardsPopoverShadowRole.standard => (14.0, 5.0),
+      // Details carry more visual content than a compact menu. Preserve the
+      // same native depth and semantic color while tightening only the blur
+      // by half a pixel.
+      BusyCardsPopoverShadowRole.details => (13.5, 4.5),
+    };
+
+    // ShapeDecoration paints in declaration order. Put the ambient layer
+    // first so the defined near edge remains above it, matching CSS stacking.
+    return [
+      BoxShadow(
+        color: layer(0.05),
+        blurRadius: ambientBlur,
+        spreadRadius: 3,
+        offset: const Offset(0, 2),
+      ),
+      BoxShadow(
+        color: layer(0.09),
+        blurRadius: nearBlur,
+        spreadRadius: 1,
+        offset: const Offset(0, 1),
+      ),
+    ];
+  }
+
+  static List<BoxShadow> nativePopoverShadowsFor(
+    BuildContext context, {
+    BusyCardsPopoverShadowRole role = BusyCardsPopoverShadowRole.standard,
+  }) {
+    return nativePopoverShadows(
+      Theme.of(context).colorScheme.shadow,
+      role: role,
+    );
+  }
+
+  /// Viewport space required for the farthest libadwaita popover shadow.
+  ///
+  /// Flutter's blur mask extends to roughly three standard deviations. Derive
+  /// the reservation from the shared profile so geometry and paint cannot
+  /// silently drift apart.
+  static double get nativePopoverPaintMargin {
+    final shadows = nativePopoverShadows(const Color(0xFF000000));
+    final extent = shadows.fold<double>(0, (maximum, shadow) {
+      final blurExtent = ui.Shadow.convertRadiusToSigma(shadow.blurRadius) * 3;
+      final offsetExtent = math.max(
+        shadow.offset.dx.abs(),
+        shadow.offset.dy.abs(),
+      );
+      return math.max(maximum, blurExtent + shadow.spreadRadius + offsetExtent);
+    });
+    return extent.ceilToDouble();
+  }
+
+  static Color floatingColor(BuildContext context) {
+    return BusyCardsSurfaceColors.of(context).shade;
+  }
+
+  static List<BoxShadow> floatingShadows(Color color) {
+    return [
+      BoxShadow(color: color, blurRadius: floatingBlur, offset: floatingOffset),
+    ];
+  }
+
+  static List<BoxShadow> floatingShadowsFor(BuildContext context) {
+    return floatingShadows(floatingColor(context));
+  }
+
+  static List<BoxShadow> windowShadows(Color color) {
+    return [
+      BoxShadow(
+        color: color.withValues(alpha: color.a * 0.75),
+        blurRadius: 22,
+        offset: const Offset(0, 10),
+      ),
+      BoxShadow(
+        color: color.withValues(alpha: color.a * 0.45),
+        blurRadius: 10,
+        offset: const Offset(0, 3),
+      ),
+      BoxShadow(
+        color: color.withValues(alpha: color.a * 0.25),
+        blurRadius: 3,
+        offset: const Offset(0, 1),
+      ),
+    ];
+  }
+
+  static List<BoxShadow> windowShadowsFor(BuildContext context) {
+    return windowShadows(floatingColor(context));
+  }
+
+  static List<BoxShadow> edgeShadows(Color color, {required bool below}) {
+    return [
+      BoxShadow(
+        color: color,
+        blurRadius: floatingBlur / 2,
+        offset: Offset(
+          0,
+          below ? floatingOffset.dy / 2 : -floatingOffset.dy / 2,
+        ),
+      ),
+    ];
+  }
+
+  static List<BoxShadow> edgeShadowsFor(
+    BuildContext context, {
+    required bool below,
+  }) {
+    return edgeShadows(floatingColor(context), below: below);
+  }
+}
+
+enum BusyCardsPopoverArrowSide { top, bottom }
+
+class BusyCardsPopoverSurface extends StatelessWidget {
+  const BusyCardsPopoverSurface({
+    super.key,
+    required this.child,
+    required this.color,
+    this.outlineColor,
+    this.arrowSide = BusyCardsPopoverArrowSide.top,
+    this.arrowAlignment = 0.5,
+    this.padding = EdgeInsets.zero,
+    this.shadowRole = BusyCardsPopoverShadowRole.standard,
+  });
+
+  final Widget child;
+  final Color color;
+  final Color? outlineColor;
+  final BusyCardsPopoverArrowSide arrowSide;
+  final double arrowAlignment;
+  final EdgeInsetsGeometry padding;
+  final BusyCardsPopoverShadowRole shadowRole;
+
+  @override
+  Widget build(BuildContext context) {
+    final arrowHeight = BusyCardsSizes.popoverArrowHeight;
+    final alignment = arrowAlignment.clamp(0.0, 1.0).toDouble();
+    final shape = _BusyCardsPopoverBorder(
+      arrowSide: arrowSide,
+      alignment: alignment,
+    );
+    final outlineShape = shape.copyWith(
+      side: BorderSide(
+        color:
+            outlineColor ?? BusyCardsSurfaceColors.of(context).floatingBorder,
+        width: BusyCardsStroke.outline,
+        strokeAlign: BorderSide.strokeAlignInside,
+      ),
+    );
+    final paddedChild = Padding(
+      padding: EdgeInsets.only(
+        top: arrowSide == BusyCardsPopoverArrowSide.top ? arrowHeight : 0,
+        bottom: arrowSide == BusyCardsPopoverArrowSide.bottom ? arrowHeight : 0,
+      ),
+      child: Padding(padding: padding, child: child),
+    );
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        color: color,
+        shadows: BusyCardsShadow.nativePopoverShadowsFor(
+          context,
+          role: shadowRole,
+        ),
+        shape: shape,
+      ),
+      child: ClipPath(
+        clipper: ShapeBorderClipper(shape: shape),
+        clipBehavior: Clip.antiAlias,
+        child: DecoratedBox(
+          position: DecorationPosition.foreground,
+          decoration: ShapeDecoration(shape: outlineShape),
+          child: paddedChild,
+        ),
+      ),
+    );
+  }
+}
+
+/// A rich anchored-content adapter for the shared GTK-style popover surface.
+///
+/// GTK exposes one popover surface role irrespective of the child content.
+/// This adapter contributes only details layout; [BusyCardsPopoverSurface]
+/// supplies the shared semantic fill, perimeter, and libadwaita shadow.
+class BusyCardsContentPopoverSurface extends StatelessWidget {
+  const BusyCardsContentPopoverSurface({
+    super.key,
+    required this.child,
+    this.arrowSide = BusyCardsPopoverArrowSide.top,
+    this.arrowAlignment = 0.5,
+    this.padding = EdgeInsets.zero,
+  });
+
+  final Widget child;
+  final BusyCardsPopoverArrowSide arrowSide;
+  final double arrowAlignment;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = BusyCardsSurfaceColors.of(context);
+    return BusyCardsPopoverSurface(
+      color: colors.popover,
+      outlineColor: colors.floatingBorder,
+      arrowSide: arrowSide,
+      arrowAlignment: arrowAlignment,
+      padding: padding,
+      shadowRole: BusyCardsPopoverShadowRole.details,
+      child: child,
+    );
+  }
+}
+
+class _BusyCardsPopoverBorder extends OutlinedBorder {
+  const _BusyCardsPopoverBorder({
+    required this.arrowSide,
+    required this.alignment,
+    super.side = BorderSide.none,
+  });
+
+  final BusyCardsPopoverArrowSide arrowSide;
+  final double alignment;
+
+  @override
+  _BusyCardsPopoverBorder copyWith({BorderSide? side}) {
+    return _BusyCardsPopoverBorder(
+      arrowSide: arrowSide,
+      alignment: alignment,
+      side: side ?? this.side,
+    );
+  }
+
+  @override
+  Path getInnerPath(Rect rect, {TextDirection? textDirection}) {
+    return getOuterPath(rect, textDirection: textDirection);
+  }
+
+  @override
+  Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
+    return _busyCardsPopoverPath(rect, side: arrowSide, alignment: alignment);
+  }
+
+  @override
+  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {
+    if (side.style == BorderStyle.none || side.width <= 0) {
+      return;
+    }
+    final path = getOuterPath(rect, textDirection: textDirection);
+    canvas
+      ..save()
+      ..clipPath(path)
+      ..drawPath(
+        path,
+        side.toPaint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = side.width * 2,
+      )
+      ..restore();
+  }
+
+  @override
+  _BusyCardsPopoverBorder scale(double t) {
+    return _BusyCardsPopoverBorder(
+      arrowSide: arrowSide,
+      alignment: alignment,
+      side: side.scale(t),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is _BusyCardsPopoverBorder &&
+            other.arrowSide == arrowSide &&
+            other.alignment == alignment &&
+            other.side == side;
+  }
+
+  @override
+  int get hashCode => Object.hash(arrowSide, alignment, side);
+}
+
+Path _busyCardsPopoverPath(
+  Rect rect, {
+  required BusyCardsPopoverArrowSide side,
+  required double alignment,
+}) {
+  if (rect.isEmpty) {
+    return Path();
+  }
+  final arrowHalfWidth = math.min(
+    BusyCardsSizes.popoverArrowWidth / 2,
+    rect.width / 2,
+  );
+  final arrowHeight = math.min(
+    BusyCardsSizes.popoverArrowHeight,
+    rect.height / 2,
+  );
+  final bodyHeight = rect.height - arrowHeight;
+  final radius = Radius.circular(
+    math.min(BusyCardsRadius.md, math.min(rect.width, bodyHeight) / 2),
+  );
+  final bodyTop = side == BusyCardsPopoverArrowSide.top
+      ? rect.top + arrowHeight
+      : rect.top;
+  final bodyBottom = side == BusyCardsPopoverArrowSide.bottom
+      ? rect.bottom - arrowHeight
+      : rect.bottom;
+  final body = RRect.fromRectAndRadius(
+    Rect.fromLTRB(rect.left, bodyTop, rect.right, bodyBottom),
+    radius,
+  );
+  final preferredArrowInset = radius.x + arrowHalfWidth;
+  final minArrowCenter = math.min(rect.width / 2, preferredArrowInset);
+  final maxArrowCenter = math.max(minArrowCenter, rect.width - minArrowCenter);
+  final arrowCenter =
+      (rect.width * alignment)
+          .clamp(minArrowCenter, maxArrowCenter)
+          .toDouble() +
+      rect.left;
+
+  final bodyPath = Path()..addRRect(body);
+  final arrowPath = Path();
+  if (side == BusyCardsPopoverArrowSide.top) {
+    arrowPath
+      ..moveTo(arrowCenter - arrowHalfWidth, bodyTop)
+      ..lineTo(arrowCenter, rect.top)
+      ..lineTo(arrowCenter + arrowHalfWidth, bodyTop)
+      ..close();
+  } else {
+    arrowPath
+      ..moveTo(arrowCenter - arrowHalfWidth, bodyBottom)
+      ..lineTo(arrowCenter, rect.bottom)
+      ..lineTo(arrowCenter + arrowHalfWidth, bodyBottom)
+      ..close();
+  }
+  return Path.combine(PathOperation.union, bodyPath, arrowPath);
+}
+
+RoundedRectangleBorder busyCardsHeaderButtonShape() {
+  return RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(BusyCardsRadius.headerButton),
+  );
+}
+
+/// An icon button whose BusyCards semantic state style remains authoritative.
+///
+/// `YaruIconButton` supplies excellent defaults, but in Yaru 10.2 its
+/// internally complete [ButtonStyle] is merged ahead of the caller's style.
+/// That makes caller-provided foreground, background, and overlay state
+/// properties unreachable. This adapter keeps Flutter's native button
+/// interaction model and Yaru's optional keyboard-focus border while allowing
+/// the shared BusyCards header style to resolve those semantic states.
+class BusyCardsHeaderIconButton extends StatelessWidget {
+  const BusyCardsHeaderIconButton({
+    super.key,
+    required this.icon,
+    required this.onPressed,
+    this.tooltip,
+    this.iconSize = BusyCardsSizes.headerIcon,
+    this.foregroundColor,
+    this.backgroundColor,
+    this.overlayColor,
+    this.fixedSize,
+    this.shape,
+    this.focusNode,
+    this.isSelected,
+    this.selectedIcon,
+    this.disabledForegroundColor,
+    this.focusBorderRadius,
+  });
+
+  final Widget icon;
+  final VoidCallback? onPressed;
+  final String? tooltip;
+  final double iconSize;
+  final Color? foregroundColor;
+  final WidgetStateProperty<Color?>? backgroundColor;
+  final WidgetStateProperty<Color?>? overlayColor;
+  final Size? fixedSize;
+  final OutlinedBorder? shape;
+  final FocusNode? focusNode;
+  final bool? isSelected;
+  final Widget? selectedIcon;
+  final Color? disabledForegroundColor;
+  final double? focusBorderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    final button = IconButton(
+      tooltip: tooltip,
+      icon: icon,
+      iconSize: iconSize,
+      onPressed: onPressed,
+      focusNode: focusNode,
+      isSelected: isSelected,
+      selectedIcon: selectedIcon,
+      style:
+          busyCardsHeaderIconButtonStyle(
+            context,
+            foregroundColor: foregroundColor,
+            disabledForegroundColor: disabledForegroundColor,
+            backgroundColor: backgroundColor,
+            overlayColor: overlayColor,
+          ).copyWith(
+            fixedSize: fixedSize == null
+                ? null
+                : WidgetStatePropertyAll(fixedSize),
+            minimumSize: fixedSize == null
+                ? null
+                : WidgetStatePropertyAll(fixedSize),
+            maximumSize: fixedSize == null
+                ? null
+                : WidgetStatePropertyAll(fixedSize),
+            shape: shape == null ? null : WidgetStatePropertyAll(shape),
+          ),
+    );
+    return YaruTheme.maybeOf(context)?.focusBorders == true
+        ? YaruFocusBorder.primary(
+            borderRadius: BorderRadius.circular(
+              focusBorderRadius ??
+                  (shape is CircleBorder ? 100 : BusyCardsRadius.headerButton),
+            ),
+            child: button,
+          )
+        : button;
+  }
+}
+
+ButtonStyle busyCardsHeaderIconButtonStyle(
+  BuildContext context, {
+  Color? foregroundColor,
+  Color? disabledForegroundColor,
+  WidgetStateProperty<Color?>? backgroundColor,
+  WidgetStateProperty<Color?>? overlayColor,
+}) {
+  final disabledForeground =
+      disabledForegroundColor ??
+      BusyCardsSurfaceColors.of(context).disabledForeground;
+  return ButtonStyle(
+    fixedSize: const WidgetStatePropertyAll(
+      Size.square(BusyCardsSizes.headerIconButton),
+    ),
+    minimumSize: const WidgetStatePropertyAll(
+      Size.square(BusyCardsSizes.headerIconButton),
+    ),
+    maximumSize: const WidgetStatePropertyAll(
+      Size.square(BusyCardsSizes.headerIconButton),
+    ),
+    padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    animationDuration: BusyCardsMotion.fast,
+    splashFactory: NoSplash.splashFactory,
+    foregroundColor: WidgetStateProperty.resolveWith((states) {
+      return states.contains(WidgetState.disabled)
+          ? disabledForeground
+          : foregroundColor;
+    }),
+    backgroundColor: backgroundColor,
+    overlayColor: overlayColor,
+    side: const WidgetStatePropertyAll(BorderSide.none),
+    shape: WidgetStatePropertyAll(busyCardsHeaderButtonShape()),
+  );
+}
+
+ButtonStyle busyCardsHeaderTextButtonStyle(
+  BuildContext context, {
+  Color? foregroundColor,
+  WidgetStateProperty<Color?>? backgroundColor,
+  WidgetStateProperty<Color?>? overlayColor,
+}) {
+  final disabledForeground = BusyCardsSurfaceColors.of(context)
+      .disabledForeground;
+  return ButtonStyle(
+    minimumSize: const WidgetStatePropertyAll(
+      Size(BusyCardsSizes.headerIconButton, BusyCardsSizes.headerIconButton),
+    ),
+    padding: const WidgetStatePropertyAll(
+      EdgeInsets.symmetric(horizontal: BusyCardsSpacing.md),
+    ),
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    foregroundColor: WidgetStateProperty.resolveWith((states) {
+      return states.contains(WidgetState.disabled)
+          ? disabledForeground
+          : foregroundColor;
+    }),
+    backgroundColor: backgroundColor,
+    overlayColor: overlayColor,
+    side: const WidgetStatePropertyAll(BorderSide.none),
+    shape: WidgetStatePropertyAll(busyCardsHeaderButtonShape()),
+  );
+}
+
+WidgetStateProperty<Color?> busyCardsSubtleButtonBackground(
+  BuildContext context,
+) {
+  final colorScheme = Theme.of(context).colorScheme;
+  return WidgetStateProperty.resolveWith((states) {
+    if (states.contains(WidgetState.pressed)) {
+      return colorScheme.onSurfaceVariant.withValues(alpha: 0.12);
+    }
+    if (states.contains(WidgetState.hovered)) {
+      return colorScheme.onSurfaceVariant.withValues(alpha: 0.08);
+    }
+    if (states.contains(WidgetState.focused)) {
+      return colorScheme.onSurfaceVariant.withValues(alpha: 0.10);
+    }
+    return null;
+  });
+}
+
+WidgetStateProperty<Color?> busyCardsHeaderButtonBackground(
+  BuildContext context,
+) {
+  final surfaceColors = BusyCardsSurfaceColors.of(context);
+  return WidgetStateProperty.resolveWith((states) {
+    if (states.contains(WidgetState.disabled)) {
+      return surfaceColors.disabledControl;
+    }
+    if (states.contains(WidgetState.pressed) ||
+        states.contains(WidgetState.selected)) {
+      return surfaceColors.controlActive;
+    }
+    if (states.contains(WidgetState.hovered) ||
+        states.contains(WidgetState.focused)) {
+      return surfaceColors.controlHover;
+    }
+    return surfaceColors.control;
+  });
+}
+
+enum BusyCardsPushButtonFocusPlacement {
+  /// The ordinary libadwaita button outline: 2 px at offset -2.
+  inset,
+
+  /// The opaque/suggested-action outline: 2 px at offset +1.
+  outside,
+}
+
+/// Paints the role-aware Ubuntu keyboard-focus outline over the complete
+/// button without changing its layout.
+///
+/// A [ButtonStyle.backgroundBuilder] receives the overall button bounds; using
+/// it here avoids the label-sized outline produced by a foreground builder.
+/// Focus visibility is tracked from actual key and pointer input because
+/// Flutter's [FocusHighlightMode.traditional] includes both mouse and keyboard.
+ButtonLayerBuilder busyCardsPushButtonFocusBuilder(
+  Color focusColor, {
+  BusyCardsPushButtonFocusPlacement placement =
+      BusyCardsPushButtonFocusPlacement.inset,
+}) {
+  return (context, states, child) {
+    final focused =
+        states.contains(WidgetState.focused) &&
+        !states.contains(WidgetState.disabled);
+    final focusVisibility = _BusyCardsKeyboardFocusVisibility.instance
+      ..ensureRegistered();
+    return ValueListenableBuilder<bool>(
+      valueListenable: focusVisibility,
+      builder: (context, keyboardInput, child) {
+        final opacity = Theme.of(context).colorScheme.isHighContrast
+            ? 0.80
+            : 0.50;
+        return CustomPaint(
+          foregroundPainter: BusyCardsPushButtonFocusPainter(
+            color: focused && keyboardInput
+                ? focusColor.withValues(alpha: focusColor.a * opacity)
+                : Colors.transparent,
+            placement: placement,
+          ),
+          child: child,
+        );
+      },
+      child: child,
+    );
+  };
+}
+
+/// The concrete focus geometry used by the shared button layer.
+///
+/// This is public so rendering tests can verify the native outline offset
+/// without inferring it from a fixture-only style.
+class BusyCardsPushButtonFocusPainter extends CustomPainter {
+  const BusyCardsPushButtonFocusPainter({
+    required this.color,
+    required this.placement,
+  });
+
+  static const double outlineWidth = 2;
+
+  final Color color;
+  final BusyCardsPushButtonFocusPlacement placement;
+
+  double get outlineOffset => switch (placement) {
+    BusyCardsPushButtonFocusPlacement.inset => -2,
+    BusyCardsPushButtonFocusPlacement.outside => 1,
+  };
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (color.a == 0 || size.isEmpty) {
+      return;
+    }
+    final centerOffset = outlineOffset + outlineWidth / 2;
+    final bounds = (Offset.zero & size).inflate(centerOffset);
+    final radius = math.max(0.0, BusyCardsRadius.sm + centerOffset);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(bounds, Radius.circular(radius)),
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = outlineWidth,
+    );
+  }
+
+  @override
+  bool shouldRepaint(BusyCardsPushButtonFocusPainter oldDelegate) {
+    return color != oldDelegate.color || placement != oldDelegate.placement;
+  }
+}
+
+/// Tracks focus-visible input modality for BusyCards push buttons.
+///
+/// Desktop starts keyboard-visible so initial programmatic/autofocus remains
+/// discoverable. A pointer press hides the ring before any focus request made
+/// by that interaction; a hardware key restores it before traversal runs.
+class _BusyCardsKeyboardFocusVisibility extends ValueNotifier<bool> {
+  _BusyCardsKeyboardFocusVisibility() : super(true) {
+    GestureBinding.instance.pointerRouter.addGlobalRoute(_handlePointerEvent);
+  }
+
+  static final instance = _BusyCardsKeyboardFocusVisibility();
+
+  FocusManager? _registeredFocusManager;
+
+  void ensureRegistered() {
+    final focusManager = FocusManager.instance;
+    if (identical(_registeredFocusManager, focusManager)) {
+      return;
+    }
+    _registeredFocusManager?.removeEarlyKeyEventHandler(_handleKeyEvent);
+    focusManager.addEarlyKeyEventHandler(_handleKeyEvent);
+    _registeredFocusManager = focusManager;
+  }
+
+  void _handlePointerEvent(PointerEvent event) {
+    if (event is PointerDownEvent && value) {
+      value = false;
+    }
+  }
+
+  KeyEventResult _handleKeyEvent(KeyEvent event) {
+    if ((event is KeyDownEvent || event is KeyRepeatEvent) && !value) {
+      value = true;
+    }
+    return KeyEventResult.ignored;
+  }
+}
+
+/// BusyCards's shared Yaru-backed desktop search entry.
+///
+/// Flutter-owned Linux header layouts delegate geometry and interaction states
+/// to Yaru instead of restyling a raw [TextField]. Header callers may supply
+/// GTK-themed artwork through the optional leading and clear slots.
+class BusyCardsSearchField extends StatefulWidget {
+  const BusyCardsSearchField({
+    super.key,
+    this.controller,
+    this.hintText,
+    this.autofocus = false,
+    this.focusRequest = 0,
+    this.onChanged,
+    this.onSubmitted,
+    this.onClear,
+    this.clearButtonSemanticLabel,
+    this.leadingIcon,
+    this.clearIcon,
+  });
+
+  final TextEditingController? controller;
+  final String? hintText;
+  final bool autofocus;
+
+  /// Increment this value to focus the Yaru-owned text entry again.
+  final int focusRequest;
+
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String?>? onSubmitted;
+  final VoidCallback? onClear;
+  final String? clearButtonSemanticLabel;
+  final Widget? leadingIcon;
+  final Widget? clearIcon;
+
+  @override
+  State<BusyCardsSearchField> createState() => _BusyCardsSearchFieldState();
+}
+
+class _BusyCardsSearchFieldState extends State<BusyCardsSearchField> {
+  final _focusScopeNode = FocusScopeNode(
+    debugLabel: 'BusyCardsSearchField scope',
+  );
+  final _yaruKeyboardFocusNode = FocusNode(
+    debugLabel: 'BusyCardsSearchField keyboard listener',
+    skipTraversal: true,
+  );
+  late TextEditingController _controller;
+  late bool _ownsController;
+  late bool _isEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    _attachController(widget.controller);
+    if (widget.autofocus) {
+      _requestTextFocus();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant BusyCardsSearchField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      _detachController();
+      _attachController(widget.controller);
+    }
+    if (oldWidget.focusRequest != widget.focusRequest) {
+      _requestTextFocus();
+    }
+  }
+
+  @override
+  void dispose() {
+    _detachController();
+    _focusScopeNode.dispose();
+    _yaruKeyboardFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _attachController(TextEditingController? controller) {
+    _ownsController = controller == null;
+    _controller = controller ?? TextEditingController();
+    _isEmpty = _controller.text.isEmpty;
+    _controller.addListener(_handleControllerChanged);
+  }
+
+  void _detachController() {
+    _controller.removeListener(_handleControllerChanged);
+    if (_ownsController) {
+      _controller.dispose();
+    }
+  }
+
+  void _handleControllerChanged() {
+    final isEmpty = _controller.text.isEmpty;
+    if (_isEmpty == isEmpty || !mounted) {
+      return;
+    }
+    setState(() => _isEmpty = isEmpty);
+  }
+
+  void _clear() {
+    widget.onClear?.call();
+    _controller.clear();
+  }
+
+  void _requestTextFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      // Yaru's public focus node belongs to its keyboard listener. Keep that
+      // wrapper out of traversal and focus the first Yaru-owned control,
+      // which is the actual text entry.
+      for (final node in _focusScopeNode.traversalDescendants) {
+        if (node.canRequestFocus) {
+          node.requestFocus();
+          return;
+        }
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final clearLabel =
+        widget.clearButtonSemanticLabel ??
+        MaterialLocalizations.of(context).clearButtonTooltip;
+    final hasLeadingIcon = widget.leadingIcon != null;
+    final contentPadding = switch (Directionality.of(context)) {
+      TextDirection.ltr => EdgeInsets.only(
+        left: hasLeadingIcon ? kYaruTitleBarItemHeight : BusyCardsSpacing.md,
+        right: kYaruTitleBarItemHeight,
+      ),
+      TextDirection.rtl => EdgeInsets.only(
+        left: kYaruTitleBarItemHeight,
+        right: hasLeadingIcon ? kYaruTitleBarItemHeight : BusyCardsSpacing.md,
+      ),
+    };
+    return FocusScope(
+      node: _focusScopeNode,
+      child: SizedBox(
+        height: kYaruTitleBarItemHeight,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            YaruSearchField(
+              controller: _controller,
+              focusNode: _yaruKeyboardFocusNode,
+              hintText: widget.hintText,
+              height: kYaruTitleBarItemHeight,
+              contentPadding: contentPadding,
+              autofocus: widget.autofocus,
+              onChanged: widget.onChanged,
+              onSubmitted: widget.onSubmitted,
+              clearIconSemanticLabel: clearLabel,
+            ),
+            if (widget.leadingIcon != null)
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: IgnorePointer(
+                  child: Padding(
+                    padding: const EdgeInsetsDirectional.only(
+                      start: BusyCardsSpacing.md,
+                    ),
+                    child: widget.leadingIcon,
+                  ),
+                ),
+              ),
+            if (widget.onClear != null && !_isEmpty)
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.only(
+                    end: BusyCardsSpacing.xxs,
+                  ),
+                  child: BusyCardsHeaderIconButton(
+                    tooltip: clearLabel,
+                    icon: widget.clearIcon ?? const Icon(YaruIcons.edit_clear),
+                    iconSize: BusyCardsSizes.iconSm,
+                    fixedSize: const Size.square(
+                      kYaruTitleBarItemHeight - BusyCardsSpacing.headerInset,
+                    ),
+                    shape: const CircleBorder(),
+                    backgroundColor: busyCardsSubtleButtonBackground(context),
+                    overlayColor: const WidgetStatePropertyAll(
+                      Colors.transparent,
+                    ),
+                    onPressed: _clear,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+abstract final class BusyCardsPushButton {
+  /// A neutral desktop action. Yaru renders this with its standard filled
+  /// control surface and native interaction geometry.
+  static FilledButton standard({
+    required Widget child,
+    required VoidCallback? onPressed,
+    VoidCallback? onLongPress,
+    ValueChanged<bool>? onHover,
+    ValueChanged<bool>? onFocusChange,
+    ButtonStyle? style,
+    FocusNode? focusNode,
+    bool autofocus = false,
+    Clip clipBehavior = Clip.none,
+    WidgetStatesController? statesController,
+    Key? key,
+  }) {
+    return FilledButton(
+      key: key,
+      onPressed: onPressed,
+      onLongPress: onLongPress,
+      onHover: onHover,
+      onFocusChange: onFocusChange,
+      style: style,
+      focusNode: focusNode,
+      autofocus: autofocus,
+      clipBehavior: clipBehavior,
+      statesController: statesController,
+      child: child,
+    );
+  }
+
+  /// A suggested action. Yaru reserves the accent-filled elevated role for
+  /// the single preferred action in a group.
+  static ElevatedButton suggested({
+    required Widget child,
+    required VoidCallback? onPressed,
+    VoidCallback? onLongPress,
+    ValueChanged<bool>? onHover,
+    ValueChanged<bool>? onFocusChange,
+    ButtonStyle? style,
+    FocusNode? focusNode,
+    bool autofocus = false,
+    Clip clipBehavior = Clip.none,
+    WidgetStatesController? statesController,
+    Key? key,
+  }) {
+    return ElevatedButton(
+      key: key,
+      onPressed: onPressed,
+      onLongPress: onLongPress,
+      onHover: onHover,
+      onFocusChange: onFocusChange,
+      style: style,
+      focusNode: focusNode,
+      autofocus: autofocus,
+      clipBehavior: clipBehavior,
+      statesController: statesController,
+      child: child,
+    );
+  }
+
+  /// A destructive desktop action.
+  ///
+  /// Keep destructive emphasis on the final action in a confirmation dialog;
+  /// ordinary destructive rows should continue to use semantic error
+  /// foregrounds without becoming accent-filled buttons.
+  static ElevatedButton destructive({
+    required BuildContext context,
+    required Widget child,
+    required VoidCallback? onPressed,
+    VoidCallback? onLongPress,
+    ValueChanged<bool>? onHover,
+    ValueChanged<bool>? onFocusChange,
+    ButtonStyle? style,
+    FocusNode? focusNode,
+    bool autofocus = false,
+    Clip clipBehavior = Clip.none,
+    WidgetStatesController? statesController,
+    Key? key,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final colors = BusyCardsSurfaceColors.of(context);
+    final background = colorScheme.error;
+    final foreground = colorScheme.onError;
+    final destructiveStyle = ButtonStyle(
+      foregroundColor: WidgetStateProperty.resolveWith((states) {
+        return states.contains(WidgetState.disabled)
+            ? colors.disabledForeground
+            : foreground;
+      }),
+      iconColor: WidgetStateProperty.resolveWith((states) {
+        return states.contains(WidgetState.disabled)
+            ? colors.disabledForeground
+            : foreground;
+      }),
+      backgroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.disabled)) {
+          return colors.disabledControl;
+        }
+        if (states.contains(WidgetState.pressed)) {
+          return Color.alphaBlend(
+            Colors.black.withValues(alpha: 0.20),
+            background,
+          );
+        }
+        if (states.contains(WidgetState.hovered)) {
+          return Color.alphaBlend(
+            foreground.withValues(alpha: 0.10),
+            background,
+          );
+        }
+        return background;
+      }),
+      overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+      elevation: const WidgetStatePropertyAll(0),
+      shadowColor: const WidgetStatePropertyAll(Colors.transparent),
+      surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+      splashFactory: NoSplash.splashFactory,
+      backgroundBuilder: busyCardsPushButtonFocusBuilder(foreground),
+    ).merge(style);
+    return ElevatedButton(
+      key: key,
+      onPressed: onPressed,
+      onLongPress: onLongPress,
+      onHover: onHover,
+      onFocusChange: onFocusChange,
+      style: destructiveStyle,
+      focusNode: focusNode,
+      autofocus: autofocus,
+      clipBehavior: clipBehavior,
+      statesController: statesController,
+      child: child,
+    );
+  }
+}
+
+/// A contained circular action for compact popover toolbars.
+///
+/// Yaru owns focus, hover, press feedback, and desktop control geometry. The
+/// outer semantic surface only adds the persistent containment used by Ubuntu
+/// detail-popover actions.
+class BusyCardsPopoverIconButton extends StatelessWidget {
+  const BusyCardsPopoverIconButton({
+    super.key,
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+    this.destructive = false,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = BusyCardsSurfaceColors.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final foreground = destructive ? colorScheme.onError : null;
+    final background = destructive ? colorScheme.error : colors.control;
+    final enabled = onPressed != null;
+    return Material(
+      color: enabled ? background : colors.disabledControl,
+      shape: const CircleBorder(),
+      child: YaruIconButton(
+        icon: Icon(
+          icon,
+          size: BusyCardsSizes.popoverActionIcon,
+          color: enabled ? foreground : colors.disabledForeground,
+        ),
+        iconSize: BusyCardsSizes.popoverActionButton,
+        style: const ButtonStyle(
+          minimumSize: WidgetStatePropertyAll(
+            Size.square(BusyCardsSizes.popoverActionButton),
+          ),
+          maximumSize: WidgetStatePropertyAll(
+            Size.square(BusyCardsSizes.popoverActionButton),
+          ),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          side: WidgetStatePropertyAll(BorderSide.none),
+          shape: WidgetStatePropertyAll(CircleBorder()),
+        ),
+        tooltip: tooltip,
+        onPressed: onPressed,
+      ),
+    );
+  }
+}
+
+Color busyCardsSelectedBackground(BuildContext context) {
+  return BusyCardsSurfaceColors.of(context).controlActive;
+}
+
+Color busyCardsHoverBackground(BuildContext context) {
+  final colorScheme = Theme.of(context).colorScheme;
+  return Color.alphaBlend(
+    colorScheme.onSurface.withValues(alpha: 0.06),
+    colorScheme.surface,
+  );
+}
+
+Color busyCardsRowHoverColor(BuildContext context) {
+  final theme = Theme.of(context);
+  final hover = theme.hoverColor;
+  if (theme.colorScheme.isHighContrast ||
+      theme.colorScheme.brightness == Brightness.dark) {
+    return hover;
+  }
+  return hover.withValues(
+    alpha: hover.a * BusyCardsAlpha.groupedRowLightHoverStrength,
+  );
+}
+
+/// Input decoration inherited by controls hosted in a grouped-list row.
+///
+/// The enclosing [BusyCardsGroupedList] owns the surface, outline, shadow,
+/// padding, and separators. Yaru and Flutter entry controls continue to own
+/// their editing behavior while this theme prevents a second input surface
+/// from being painted inside the native grouped row.
+InputDecorationThemeData busyCardsGroupedInputDecorationTheme(
+  BuildContext context,
+) {
+  final theme = Theme.of(context);
+  final labelColor = theme.colorScheme.onSurfaceVariant;
+  final labelStyle = theme.textTheme.bodyMedium?.copyWith(color: labelColor);
+
+  return theme.inputDecorationTheme.copyWith(
+    filled: false,
+    fillColor: Colors.transparent,
+    hoverColor: Colors.transparent,
+    border: InputBorder.none,
+    enabledBorder: InputBorder.none,
+    focusedBorder: InputBorder.none,
+    disabledBorder: InputBorder.none,
+    errorBorder: InputBorder.none,
+    focusedErrorBorder: InputBorder.none,
+    contentPadding: EdgeInsets.zero,
+    labelStyle: labelStyle,
+    floatingLabelStyle: labelStyle,
+    floatingLabelBehavior: FloatingLabelBehavior.auto,
+  );
+}
+
+InputDecoration busyCardsGroupedTextFieldDecoration(
+  BuildContext context, {
+  required String labelText,
+  String? errorText,
+  bool alignLabelWithHint = false,
+}) {
+  final decoration = InputDecoration(
+    labelText: labelText,
+    errorText: errorText,
+    alignLabelWithHint: alignLabelWithHint,
+  );
+  final defaults = busyCardsGroupedInputDecorationTheme(context);
+  final resolved = decoration.applyDefaults(defaults);
+  if (errorText == null) {
+    return resolved;
+  }
+  final errorLabelStyle = Theme.of(context).textTheme.bodyMedium
+      ?.copyWith(color: Theme.of(context).colorScheme.error);
+  return resolved.copyWith(
+    labelStyle: errorLabelStyle,
+    floatingLabelStyle: errorLabelStyle,
+  );
+}
+
+Color busyCardsModalBarrierColor(BuildContext context) {
+  // The semantic shade already carries the toolkit's intended modal opacity.
+  // Consumers must not multiply or cap it and thereby create mode-specific
+  // dimming behavior.
+  return BusyCardsSurfaceColors.of(context).shade;
+}
+
+Color busyCardsPanelBorder(BuildContext context) {
+  return Theme.of(context).colorScheme.outlineVariant;
+}
+
+/// A low-emphasis separator for repeated calendar cells and time slots.
+///
+/// GTK's generic separator can be recessed (darker than its surface), which
+/// is appropriate for native list separators but makes a dense dark calendar
+/// grid look black. Calendar grids instead use a subtle foreground tint, while
+/// high-contrast themes retain their full-strength semantic outline.
+Color busyCardsCalendarGridColor(BuildContext context) {
+  final colorScheme = Theme.of(context).colorScheme;
+  if (colorScheme.isHighContrast) {
+    return colorScheme.outlineVariant;
+  }
+  return colorScheme.onSurface.withValues(
+    alpha: colorScheme.brightness == Brightness.dark
+        ? BusyCardsAlpha.calendarGridDark
+        : BusyCardsAlpha.calendarGridLight,
+  );
+}
+
+TextStyle? busyCardsSectionHeaderStyle(BuildContext context) {
+  final theme = Theme.of(context);
+  return theme.textTheme.titleSmall?.copyWith(
+    color: theme.colorScheme.onSurfaceVariant,
+  );
+}
+
+/// The semantic title style used by Flutter-rendered window headers.
+///
+/// Linux applies GTK's `title` style class to the native header label. The
+/// Flutter fallback keeps the theme's title geometry and color, and mirrors
+/// only that semantic emphasis.
+TextStyle busyCardsHeaderTitleStyle(BuildContext context) {
+  return (Theme.of(context).textTheme.bodyMedium ?? const TextStyle()).copyWith(
+    fontWeight: FontWeight.bold,
+  );
+}
+
+/// The stronger GTK-sized wordmark used only by the Linux sidebar header.
+TextStyle busyCardsHeaderBrandStyle(BuildContext context) {
+  return (Theme.of(context).textTheme.bodyMedium ?? const TextStyle()).copyWith(
+    fontWeight: FontWeight.w800,
+  );
+}
+
+Widget _busyCardsGroupedRowSubtitle(
+  BuildContext context,
+  Widget child, {
+  bool enabled = true,
+}) {
+  final colors = BusyCardsSurfaceColors.of(context);
+  return DefaultTextStyle.merge(
+    style: TextStyle(
+      color: enabled ? colors.mutedForeground : colors.disabledForeground,
+    ),
+    child: child,
+  );
+}
+
+class BusyCardsClamp extends StatelessWidget {
+  const BusyCardsClamp({
+    super.key,
+    required this.child,
+    this.maxWidth = 680,
+    this.scrollable = true,
+    this.center = true,
+    this.padding = EdgeInsets.zero,
+    this.margin = const EdgeInsets.all(BusyCardsSpacing.lg),
+    this.controller,
+  });
+
+  final Widget child;
+  final double maxWidth;
+  final bool scrollable;
+  final bool center;
+  final EdgeInsetsGeometry padding;
+  final EdgeInsetsGeometry margin;
+  final ScrollController? controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final clamped = Container(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      margin: margin,
+      padding: padding,
+      child: child,
+    );
+
+    final body = center
+        ? Align(alignment: Alignment.topCenter, child: clamped)
+        : clamped;
+
+    return scrollable
+        ? SingleChildScrollView(controller: controller, child: body)
+        : body;
+  }
+}
+
+/// Semantic parent surfaces that can contain a grouped card.
+///
+/// GTK's card role is a contextual layer in dark themes. Keeping the parent
+/// role explicit lets the shared grouped-card adapter resolve one opaque paint
+/// color for Flutter's elevated [Material] without tying every card to the
+/// main window background.
+enum BusyCardsSurfaceRole { window, view, sidebar, dialog, popover }
+
+class BusyCardsSurfaceScope extends InheritedWidget {
+  const BusyCardsSurfaceScope({
+    super.key,
+    required this.role,
+    required super.child,
+  });
+
+  final BusyCardsSurfaceRole role;
+
+  static BusyCardsSurfaceRole roleOf(BuildContext context) {
+    return context
+            .dependOnInheritedWidgetOfExactType<BusyCardsSurfaceScope>()
+            ?.role ??
+        BusyCardsSurfaceRole.window;
+  }
+
+  @override
+  bool updateShouldNotify(BusyCardsSurfaceScope oldWidget) {
+    return role != oldWidget.role;
+  }
+}
+
+Color busyCardsGroupedSurfaceColor(
+  BuildContext context, {
+  BusyCardsSurfaceRole? parentRole,
+}) {
+  final colors = BusyCardsSurfaceColors.of(context);
+  final role = parentRole ?? BusyCardsSurfaceScope.roleOf(context);
+  if (role == BusyCardsSurfaceRole.window) {
+    // The native bridge already resolves the opaque card role against the
+    // window. Reuse that authoritative value exactly instead of recomputing
+    // an equivalent color with different floating-point channel values.
+    return colors.card;
+  }
+  final parent = switch (role) {
+    BusyCardsSurfaceRole.window => colors.window,
+    BusyCardsSurfaceRole.view => colors.view,
+    BusyCardsSurfaceRole.sidebar => colors.sidebar,
+    BusyCardsSurfaceRole.dialog => colors.dialog,
+    BusyCardsSurfaceRole.popover => colors.popover,
+  };
+  return Color.alphaBlend(colors.groupedSurface, parent);
+}
+
+class BusyCardsGroupedList extends StatelessWidget {
+  const BusyCardsGroupedList({
+    super.key,
+    this.title,
+    this.description,
+    this.titleStyle,
+    required this.children,
+    this.padding = const EdgeInsets.symmetric(horizontal: BusyCardsSpacing.xs),
+    this.filled = false,
+  });
+
+  final String? title;
+  final String? description;
+  final TextStyle? titleStyle;
+  final List<Widget> children;
+  final EdgeInsetsGeometry padding;
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        top: title == null && (description == null || description!.isEmpty)
+            ? BusyCardsSpacing.md
+            : BusyCardsSpacing.lg,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (title != null) ...[
+            Padding(
+              padding: padding,
+              child: Semantics(
+                header: true,
+                child: Text(
+                  title!,
+                  style: titleStyle ?? busyCardsSectionHeaderStyle(context),
+                ),
+              ),
+            ),
+            if (description != null && description!.isNotEmpty) ...[
+              const SizedBox(height: BusyCardsSpacing.xs),
+              Padding(
+                padding: padding,
+                child: Text(
+                  description!,
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
+              ),
+            ],
+            const SizedBox(height: BusyCardsSpacing.sm),
+          ],
+          _BusyCardsGroupedListSurface(filled: filled, children: children),
+        ],
+      ),
+    );
+  }
+}
+
+class BusyCardsSurface extends StatelessWidget {
+  const BusyCardsSurface({
+    super.key,
+    required this.child,
+    this.filled = true,
+    this.color,
+    this.side,
+    this.clipBehavior = Clip.antiAlias,
+  });
+
+  final Widget child;
+  final bool filled;
+  final Color? color;
+  final BorderSide? side;
+  final Clip clipBehavior;
+
+  @override
+  Widget build(BuildContext context) {
+    final cardTheme = CardTheme.of(context);
+    final surfaceColors = BusyCardsSurfaceColors.of(context);
+    final fallbackShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(BusyCardsRadius.md),
+    );
+    final themedShape = cardTheme.shape;
+    final ShapeBorder shape;
+    if (themedShape is OutlinedBorder) {
+      shape = side == null ? themedShape : themedShape.copyWith(side: side);
+    } else if (themedShape != null && side == null) {
+      shape = themedShape;
+    } else {
+      shape = fallbackShape.copyWith(side: side ?? BorderSide.none);
+    }
+    final surfaceColor = filled
+        ? color ?? cardTheme.color ?? surfaceColors.card
+        : Colors.transparent;
+    if (filled) {
+      final shadowShape = shape is OutlinedBorder
+          ? shape.copyWith(side: BorderSide.none)
+          : shape;
+      return DecoratedBox(
+        decoration: ShapeDecoration(
+          shape: shadowShape,
+          shadows: BusyCardsShadow.nativeCardShadowsFor(context),
+        ),
+        child: Card(
+          margin: EdgeInsets.zero,
+          semanticContainer: false,
+          color: surfaceColor,
+          // Native card depth is painted once by the shared ShapeDecoration
+          // above. Keep Card for Yaru geometry, clipping, and semantics while
+          // suppressing Material's directional duplicate.
+          shadowColor: Colors.transparent,
+          shape: shape,
+          clipBehavior: clipBehavior,
+          child: child,
+        ),
+      );
+    }
+    return Material(
+      color: Colors.transparent,
+      elevation: 0,
+      surfaceTintColor: cardTheme.surfaceTintColor ?? Colors.transparent,
+      shape: shape,
+      clipBehavior: clipBehavior,
+      child: child,
+    );
+  }
+}
+
+class BusyCardsGroupedSurface extends StatelessWidget {
+  const BusyCardsGroupedSurface({
+    super.key,
+    required this.child,
+    this.clipBehavior = Clip.antiAlias,
+  });
+
+  final Widget child;
+  final Clip clipBehavior;
+
+  @override
+  Widget build(BuildContext context) {
+    final highContrast = MediaQuery.highContrastOf(context);
+    return BusyCardsSurface(
+      color: busyCardsGroupedSurfaceColor(context),
+      side: highContrast
+          ? BorderSide(color: Theme.of(context).colorScheme.outline)
+          : null,
+      clipBehavior: clipBehavior,
+      child: child,
+    );
+  }
+}
+
+class BusyCardsSidebarSurface extends StatelessWidget {
+  const BusyCardsSidebarSurface({
+    super.key,
+    required this.child,
+    this.showEndBorder = true,
+  });
+
+  final Widget child;
+  final bool showEndBorder;
+
+  @override
+  Widget build(BuildContext context) {
+    final surfaceColors = BusyCardsSurfaceColors.of(context);
+    final content = showEndBorder
+        ? DecoratedBox(
+            position: DecorationPosition.foreground,
+            decoration: BoxDecoration(
+              border: BorderDirectional(
+                end: BorderSide(
+                  color: surfaceColors.sidebarBorder,
+                  width: BusyCardsStroke.outline,
+                ),
+              ),
+            ),
+            child: child,
+          )
+        : child;
+    return Material(color: surfaceColors.sidebar, child: content);
+  }
+}
+
+/// A GTK-style navigation list for a persistent desktop sidebar.
+///
+/// The list delegates row interaction, focus handling, and selection geometry
+/// to Yaru's master-detail controls while mapping their visual states to
+/// BusyCards's semantic surface roles.
+class BusyCardsSidebarNavigation extends StatelessWidget {
+  const BusyCardsSidebarNavigation({super.key, required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = BusyCardsSurfaceColors.of(context);
+    final masterDetailTheme = YaruMasterDetailTheme.of(context);
+
+    return Theme(
+      data: theme.copyWith(
+        listTileTheme: theme.listTileTheme.copyWith(
+          selectedColor: colors.foreground,
+          selectedTileColor: Color.alphaBlend(colors.control, colors.sidebar),
+          tileColor: Colors.transparent,
+          iconColor: colors.mutedForeground,
+          textColor: colors.foreground,
+          titleTextStyle: theme.textTheme.bodyMedium,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: BusyCardsSpacing.sm,
+          ),
+          horizontalTitleGap: BusyCardsSpacing.sm,
+          minVerticalPadding: 0,
+          minLeadingWidth: BusyCardsSizes.iconSm,
+          minTileHeight: BusyCardsSizes.sidebarRowHeight,
+          visualDensity: VisualDensity.standard,
+          titleAlignment: ListTileTitleAlignment.center,
+        ),
+      ),
+      child: ListView.separated(
+        padding:
+            masterDetailTheme.listPadding ??
+            const EdgeInsets.symmetric(vertical: BusyCardsSpacing.sm),
+        itemCount: children.length,
+        itemBuilder: (context, index) => children[index],
+        separatorBuilder: (context, index) => SizedBox(
+          height: masterDetailTheme.tileSpacing ?? BusyCardsSpacing.xxs,
+        ),
+      ),
+    );
+  }
+}
+
+/// A selectable row for [BusyCardsSidebarNavigation].
+class BusyCardsSidebarNavigationTile extends StatelessWidget {
+  const BusyCardsSidebarNavigationTile({
+    super.key,
+    required this.selected,
+    required this.leading,
+    required this.title,
+    required this.onTap,
+  });
+
+  final bool selected;
+  final Widget leading;
+  final Widget title;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return YaruMasterTile(
+      selected: selected,
+      leading: IconTheme.merge(
+        data: const IconThemeData(size: BusyCardsSizes.iconSm),
+        child: leading,
+      ),
+      title: title,
+      onTap: onTap,
+    );
+  }
+}
+
+class _BusyCardsGroupedListSurface extends StatelessWidget {
+  const _BusyCardsGroupedListSurface({
+    required this.filled,
+    required this.children,
+  });
+
+  final bool filled;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final surfaceColors = BusyCardsSurfaceColors.of(context);
+    final list = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var index = 0; index < children.length; index++) ...[
+          children[index],
+          if (index < children.length - 1)
+            Divider(height: 1, thickness: 1, color: surfaceColors.cardShade),
+        ],
+      ],
+    );
+    if (!filled) {
+      return list;
+    }
+    return BusyCardsGroupedSurface(child: list);
+  }
+}
+
+typedef BusyCardsRowActivationCallback = void Function(
+  BuildContext context,
+  Offset? globalPosition,
+);
+
+class BusyCardsActionRow extends StatefulWidget {
+  const BusyCardsActionRow({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.titleWidget,
+    this.subtitleWidget,
+    this.leading,
+    this.trailing,
+    this.onTap,
+    this.onActivated,
+    this.enabled = true,
+    this.tooltip,
+    this.destructive = false,
+    this.autofocus = false,
+    this.hoverColor,
+  }) : assert(onTap == null || onActivated == null);
+
+  final String title;
+  final String? subtitle;
+  final Widget? titleWidget;
+  final Widget? subtitleWidget;
+  final Widget? leading;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final BusyCardsRowActivationCallback? onActivated;
+  final bool enabled;
+  final String? tooltip;
+  final bool destructive;
+  final bool autofocus;
+  final Color? hoverColor;
+
+  @override
+  State<BusyCardsActionRow> createState() => _BusyCardsActionRowState();
+}
+
+class _BusyCardsActionRowState extends State<BusyCardsActionRow> {
+  int? _primaryPointer;
+  Offset? _pointerDownPosition;
+
+  @override
+  void didUpdateWidget(covariant BusyCardsActionRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.enabled || widget.onActivated == null) {
+      _clearPointer();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final colors = BusyCardsSurfaceColors.of(context);
+    final titleStyle = widget.destructive
+        ? TextStyle(
+            color: widget.enabled
+                ? colorScheme.error
+                : colors.disabledForeground,
+          )
+        : null;
+    final subtitle =
+        widget.subtitleWidget ??
+        (widget.subtitle == null || widget.subtitle!.isEmpty
+            ? null
+            : Text(
+                widget.subtitle!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ));
+    final interactive =
+        widget.enabled && (widget.onTap != null || widget.onActivated != null);
+    final row = YaruListTile.square(
+      leading: widget.leading,
+      title:
+          widget.titleWidget ??
+          Text(
+            widget.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: titleStyle,
+          ),
+      subtitle: subtitle == null
+          ? null
+          : _busyCardsGroupedRowSubtitle(
+              context,
+              subtitle,
+              enabled: widget.enabled,
+            ),
+      trailing: widget.trailing,
+      enabled: widget.enabled,
+      autofocus: widget.autofocus,
+      hoverColor: widget.hoverColor ?? busyCardsRowHoverColor(context),
+      onTap: interactive ? _activate : null,
+    );
+
+    final trackedRow = widget.onActivated == null
+        ? row
+        : Listener(
+            onPointerDown: widget.enabled ? _handlePointerDown : null,
+            onPointerUp: widget.enabled ? _handlePointerUp : null,
+            onPointerCancel: widget.enabled ? _handlePointerCancel : null,
+            child: row,
+          );
+
+    if (widget.enabled || widget.tooltip == null) {
+      return trackedRow;
+    }
+
+    return Tooltip(
+      message: widget.tooltip!,
+      child: Opacity(opacity: 0.6, child: IgnorePointer(child: trackedRow)),
+    );
+  }
+
+  void _handlePointerDown(PointerDownEvent event) {
+    if (event.buttons != kPrimaryButton) {
+      return;
+    }
+    _primaryPointer = event.pointer;
+    _pointerDownPosition = event.position;
+  }
+
+  void _handlePointerUp(PointerUpEvent event) {
+    if (_primaryPointer != event.pointer) {
+      return;
+    }
+    final pointer = event.pointer;
+    scheduleMicrotask(() {
+      if (mounted && _primaryPointer == pointer) {
+        _clearPointer();
+      }
+    });
+  }
+
+  void _handlePointerCancel(PointerCancelEvent event) {
+    if (_primaryPointer == event.pointer) {
+      _clearPointer();
+    }
+  }
+
+  void _activate() {
+    final onActivated = widget.onActivated;
+    if (onActivated == null) {
+      widget.onTap?.call();
+      return;
+    }
+    final globalPosition = _pointerDownPosition;
+    _clearPointer();
+    onActivated(context, globalPosition);
+  }
+
+  void _clearPointer() {
+    _primaryPointer = null;
+    _pointerDownPosition = null;
+  }
+}
+
+class BusyCardsCategoryEditorRow extends StatelessWidget {
+  const BusyCardsCategoryEditorRow({
+    super.key,
+    required this.title,
+    required this.addLabel,
+    required this.categories,
+    required this.suggestions,
+    required this.adding,
+    required this.onAddPressed,
+    required this.onSubmitted,
+    required this.onCancelAdding,
+    required this.onDeleted,
+    this.inputKey,
+  });
+
+  final String title;
+  final String addLabel;
+  final List<String> categories;
+  final List<String> suggestions;
+  final bool adding;
+  final VoidCallback onAddPressed;
+  final ValueChanged<String> onSubmitted;
+  final VoidCallback onCancelAdding;
+  final ValueChanged<String> onDeleted;
+  final Key? inputKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final visibleSuggestions = _visibleCategorySuggestions(
+      suggestions: suggestions,
+      selectedCategories: categories,
+    );
+    return BusyCardsActionRow(
+      title: title,
+      leading: const Icon(Icons.sell_outlined),
+      subtitleWidget: Padding(
+        padding: const EdgeInsets.only(top: BusyCardsSpacing.xs),
+        child: Wrap(
+          spacing: BusyCardsSpacing.xs,
+          runSpacing: BusyCardsSpacing.xs,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            for (final category in categories)
+              _BusyCardsCategoryChip(
+                label: category,
+                onDeleted: () => onDeleted(category),
+              ),
+            if (adding) ...[
+              _BusyCardsCategoryInput(
+                hintText: addLabel,
+                suggestions: visibleSuggestions,
+                inputKey: inputKey,
+                onSubmitted: onSubmitted,
+                onCancel: onCancelAdding,
+              ),
+            ] else
+              _BusyCardsAddCategoryChip(
+                label: addLabel,
+                onPressed: onAddPressed,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BusyCardsCategoryChip extends StatelessWidget {
+  const _BusyCardsCategoryChip({required this.label, required this.onDeleted});
+
+  final String label;
+  final VoidCallback onDeleted;
+
+  @override
+  Widget build(BuildContext context) {
+    return InputChip(
+      label: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 160),
+        child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+      ),
+      deleteIcon: const Icon(YaruIcons.window_close),
+      deleteButtonTooltipMessage:
+          '${MaterialLocalizations.of(context).deleteButtonTooltip} $label',
+      onDeleted: onDeleted,
+    );
+  }
+}
+
+class _BusyCardsAddCategoryChip extends StatelessWidget {
+  const _BusyCardsAddCategoryChip({
+    required this.label,
+    required this.onPressed,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return ActionChip(
+      avatar: const Icon(YaruIcons.plus, size: BusyCardsSizes.iconSm),
+      label: Text(label),
+      onPressed: onPressed,
+    );
+  }
+}
+
+class _BusyCardsCategoryInput extends StatefulWidget {
+  const _BusyCardsCategoryInput({
+    required this.hintText,
+    required this.suggestions,
+    this.inputKey,
+    required this.onSubmitted,
+    required this.onCancel,
+  });
+
+  final String hintText;
+  final List<String> suggestions;
+  final Key? inputKey;
+  final ValueChanged<String> onSubmitted;
+  final VoidCallback onCancel;
+
+  @override
+  State<_BusyCardsCategoryInput> createState() =>
+      _BusyCardsCategoryInputState();
+}
+
+class _BusyCardsCategoryInputState extends State<_BusyCardsCategoryInput> {
+  FocusNode? _requestedFocusNode;
+
+  @override
+  Widget build(BuildContext context) {
+    final materialL10n = MaterialLocalizations.of(context);
+    return SizedBox(
+      width: 260,
+      child: Focus(
+        onKeyEvent: (_, event) {
+          if (event is KeyDownEvent &&
+              event.logicalKey == LogicalKeyboardKey.escape) {
+            widget.onCancel();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: YaruAutocomplete<String>(
+          displayStringForOption: (option) => option,
+          optionsMaxHeight: 240,
+          optionsBuilder: (value) =>
+              _matchingCategorySuggestions(widget.suggestions, value),
+          onSelected: widget.onSubmitted,
+          fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+            _requestInitialFocus(focusNode);
+
+            void submitTypedCategory() {
+              final category = _canonicalCategory(
+                controller.text,
+                widget.suggestions,
+              );
+              if (category != null) {
+                widget.onSubmitted(category);
+              }
+            }
+
+            return TextField(
+              key: widget.inputKey,
+              controller: controller,
+              focusNode: focusNode,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: widget.hintText,
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    YaruIconButton(
+                      tooltip: materialL10n.okButtonLabel,
+                      icon: const Icon(YaruIcons.checkmark),
+                      onPressed: submitTypedCategory,
+                    ),
+                    YaruIconButton(
+                      tooltip: materialL10n.cancelButtonLabel,
+                      icon: const Icon(YaruIcons.window_close),
+                      onPressed: widget.onCancel,
+                    ),
+                  ],
+                ),
+              ),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (value) {
+                final options = _matchingCategorySuggestions(
+                  widget.suggestions,
+                  TextEditingValue(text: value),
+                );
+                if (options.isEmpty) {
+                  submitTypedCategory();
+                } else {
+                  onFieldSubmitted();
+                }
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _requestInitialFocus(FocusNode focusNode) {
+    if (identical(_requestedFocusNode, focusNode)) {
+      return;
+    }
+    _requestedFocusNode = focusNode;
+    // This field is inserted into an already-focused editor, so TextField's
+    // autofocus alone does not reliably move focus from the Add chip.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && identical(_requestedFocusNode, focusNode)) {
+        focusNode.requestFocus();
+      }
+    });
+  }
+}
+
+List<String> _visibleCategorySuggestions({
+  required List<String> suggestions,
+  required List<String> selectedCategories,
+}) {
+  final selected = {
+    for (final category in selectedCategories) _normalizedCategory(category),
+  };
+  final seen = <String>{};
+  return [
+    for (final suggestion in suggestions)
+      if (suggestion.trim() case final trimmed
+          when trimmed.isNotEmpty &&
+              !selected.contains(_normalizedCategory(trimmed)) &&
+              seen.add(_normalizedCategory(trimmed)))
+        trimmed,
+  ];
+}
+
+Iterable<String> _matchingCategorySuggestions(
+  List<String> suggestions,
+  TextEditingValue value,
+) {
+  final query = _normalizedCategory(value.text);
+  if (query.isEmpty) {
+    return const [];
+  }
+  final matching = [
+    for (final suggestion in suggestions)
+      if (_normalizedCategory(suggestion).contains(query)) suggestion,
+  ];
+  matching.sort((left, right) {
+    final leftNormalized = _normalizedCategory(left);
+    final rightNormalized = _normalizedCategory(right);
+    final leftExact = leftNormalized == query;
+    final rightExact = rightNormalized == query;
+    if (leftExact != rightExact) {
+      return leftExact ? -1 : 1;
+    }
+    final leftStarts = leftNormalized.startsWith(query);
+    final rightStarts = rightNormalized.startsWith(query);
+    if (leftStarts != rightStarts) {
+      return leftStarts ? -1 : 1;
+    }
+    return leftNormalized.compareTo(rightNormalized);
+  });
+  return matching.take(8);
+}
+
+String? _canonicalCategory(String value, List<String> suggestions) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) {
+    return null;
+  }
+  final normalized = _normalizedCategory(trimmed);
+  for (final suggestion in suggestions) {
+    if (_normalizedCategory(suggestion) == normalized) {
+      return suggestion;
+    }
+  }
+  return trimmed;
+}
+
+String _normalizedCategory(String value) => value.trim().toLowerCase();
+
+class BusyCardsContactValueRow extends StatelessWidget {
+  const BusyCardsContactValueRow({
+    super.key,
+    required this.label,
+    required this.entry,
+    this.leading,
+    this.trailingIcons = const [],
+    this.enabled = true,
+    this.tooltip,
+  });
+
+  final String label;
+  final Widget entry;
+  final Widget? leading;
+  final List<Widget> trailingIcons;
+  final bool enabled;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final row = YaruListTile.square(
+      leading: leading,
+      title: Semantics(container: true, label: label, child: entry),
+      trailing: trailingIcons.isEmpty
+          ? null
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final icon in trailingIcons) ...[
+                  icon,
+                  if (icon != trailingIcons.last)
+                    const SizedBox(width: BusyCardsSpacing.sm),
+                ],
+              ],
+            ),
+      enabled: enabled,
+    );
+
+    if (enabled || tooltip == null) {
+      return row;
+    }
+
+    return Tooltip(
+      message: tooltip!,
+      child: Opacity(
+        opacity: 0.6,
+        child: IgnorePointer(child: ExcludeFocus(child: row)),
+      ),
+    );
+  }
+}
+
+class BusyCardsContactNotesCard extends StatelessWidget {
+  const BusyCardsContactNotesCard({
+    super.key,
+    required this.controller,
+    required this.hintText,
+    required this.onChanged,
+    this.minLines = 3,
+    this.maxLines = 8,
+  });
+
+  final TextEditingController controller;
+  final String hintText;
+  final ValueChanged<String> onChanged;
+  final int minLines;
+  final int maxLines;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: BusyCardsSpacing.lg,
+        vertical: BusyCardsSpacing.md,
+      ),
+      child: TextField(
+        controller: controller,
+        minLines: minLines,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          hintText: hintText,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          focusedErrorBorder: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+        ),
+        onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+/// A single-selection row following the native AdwComboRow interaction model.
+///
+/// The whole row owns hover, focus, and activation. Its current value remains
+/// plain trailing content, while menu presentation is delegated to the shared
+/// host-toolkit adapter.
+class BusyCardsComboRow<T> extends StatelessWidget {
+  BusyCardsComboRow({
+    super.key,
+    required this.title,
+    required List<T> values,
+    required this.selected,
+    required this.labelFor,
+    required this.onSelected,
+    this.subtitle,
+    this.errorText,
+    this.leading,
+    this.enabled = true,
+    this.tooltip,
+    this.width = BusyCardsSizes.comboWidth,
+    this.trailingAction,
+    this.selectorLeadingBuilder,
+  }) : values = List<T>.unmodifiable(values) {
+    if (this.values.isEmpty) {
+      throw ArgumentError.value(
+        values,
+        'values',
+        'A combo row requires at least one value.',
+      );
+    }
+    if (this.values.toSet().length != this.values.length) {
+      throw ArgumentError.value(
+        values,
+        'values',
+        'A combo row requires unique values.',
+      );
+    }
+    if (!this.values.contains(selected)) {
+      throw ArgumentError.value(
+        selected,
+        'selected',
+        'The selected value must be present in values.',
+      );
+    }
+    if (!width.isFinite || width <= 0) {
+      throw ArgumentError.value(
+        width,
+        'width',
+        'The maximum value width must be finite and positive.',
+      );
+    }
+  }
+
+  final String title;
+  final List<T> values;
+  final T selected;
+  final String Function(T value) labelFor;
+  final ValueChanged<T> onSelected;
+  final String? subtitle;
+  final String? errorText;
+  final Widget? leading;
+  final bool enabled;
+  final String? tooltip;
+  final double width;
+  final Widget? trailingAction;
+  final Widget Function(BuildContext context, T value)? selectorLeadingBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final hasError = errorText?.isNotEmpty ?? false;
+        final subtitleWidget = hasError
+            ? Text(
+                errorText!,
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: Theme.of(context).colorScheme.error),
+              )
+            : subtitle == null
+            ? null
+            : Text(subtitle!);
+        final styledSubtitle = subtitleWidget == null
+            ? null
+            : _busyCardsGroupedRowSubtitle(
+                context,
+                subtitleWidget,
+                enabled: enabled,
+              );
+        final actionAllowance = trailingAction == null
+            ? 0.0
+            : BusyCardsSizes.headerIconButton + BusyCardsSpacing.xs;
+        final availableWidth = constraints.hasBoundedWidth
+            ? constraints.maxWidth
+            : width + BusyCardsSpacing.md * 2 + actionAllowance;
+        final maximumValueWidth =
+            (availableWidth * BusyCardsFormLayout.comboInlineMaxFraction -
+                    actionAllowance)
+                .clamp(0.0, width)
+                .toDouble();
+        final menuButton = BusyCardsMenuButton<T>(
+          tooltip: tooltip ?? title,
+          entries: [
+            for (final value in values)
+              BusyCardsMenuEntry(
+                value: value,
+                label: labelFor(value),
+                role: BusyCardsMenuEntryRole.radio,
+                selected: value == selected,
+              ),
+          ],
+          onSelected: (value) {
+            if (value != selected) {
+              onSelected(value);
+            }
+          },
+          enabled: enabled,
+          triggerBuilder: (context, trigger) {
+            final colors = BusyCardsSurfaceColors.of(context);
+            final valueForeground = enabled
+                ? colors.foreground
+                : colors.disabledForeground;
+            final value = ExcludeSemantics(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maximumValueWidth),
+                child: DefaultTextStyle.merge(
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: valueForeground),
+                  child: IconTheme.merge(
+                    data: IconThemeData(
+                      color: valueForeground,
+                      size: BusyCardsSizes.iconSm,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (selectorLeadingBuilder?.call(context, selected)
+                            case final selectedLeading?) ...[
+                          selectedLeading,
+                          const SizedBox(width: BusyCardsSpacing.sm),
+                        ],
+                        Flexible(
+                          child: Text(
+                            labelFor(selected),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: BusyCardsSpacing.sm),
+                        trigger.anchor(child: const Icon(YaruIcons.pan_down)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+            final row = YaruListTile.square(
+              leading: leading == null
+                  ? null
+                  : ExcludeSemantics(child: leading!),
+              title: ExcludeSemantics(child: Text(title)),
+              subtitle: styledSubtitle == null
+                  ? null
+                  : ExcludeSemantics(child: styledSubtitle),
+              trailing: value,
+              onTap: trigger.onPressed,
+              focusNode: trigger.focusNode,
+              hoverColor: busyCardsRowHoverColor(context),
+              enabled: enabled,
+            );
+            final semanticRow = Semantics(
+              container: true,
+              button: true,
+              enabled: enabled,
+              expanded: trigger.isOpen,
+              onTap: enabled ? trigger.onPressed : null,
+              label: subtitle == null || subtitle!.isEmpty
+                  ? title
+                  : '$title, $subtitle',
+              value: labelFor(selected),
+              hint: hasError ? errorText : null,
+              liveRegion: hasError,
+              validationResult: hasError
+                  ? ui.SemanticsValidationResult.invalid
+                  : ui.SemanticsValidationResult.valid,
+              child: ExcludeSemantics(child: row),
+            );
+            final interactionRow = trailingAction == null
+                ? semanticRow
+                : Row(
+                    children: [
+                      Expanded(child: semanticRow),
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(
+                          end: BusyCardsSpacing.md,
+                        ),
+                        child: trailingAction!,
+                      ),
+                    ],
+                  );
+            final statefulRow = ColoredBox(
+              color: trigger.isOpen
+                  ? busyCardsRowHoverColor(context)
+                  : Colors.transparent,
+              child: interactionRow,
+            );
+            final boundedRow = constraints.hasBoundedWidth
+                ? statefulRow
+                : SizedBox(width: availableWidth, child: statefulRow);
+            return tooltip == null
+                ? boundedRow
+                : Tooltip(
+                    message: tooltip!,
+                    excludeFromSemantics: true,
+                    child: boundedRow,
+                  );
+          },
+        );
+        return menuButton;
+      },
+    );
+  }
+}
+
+typedef BusyCardsYaruFocusedControlBuilder = Widget Function(
+  BuildContext context,
+  FocusNode focusNode,
+);
+
+/// Presents Yaru's outline around the existing focus target during keyboard
+/// navigation without adding another focus node or interaction handler.
+///
+/// Yaru 10.2.0's selection controls and toggle list tiles do not propagate
+/// their internal target's focus to the [YaruFocusBorder] installed by
+/// `hasFocusBorder`. Driving the same outline from the target's [FocusNode]
+/// keeps the supported presentation while preserving traversal and gestures.
+class BusyCardsYaruFocusBorder extends StatefulWidget {
+  const BusyCardsYaruFocusBorder({
+    super.key,
+    required this.builder,
+    this.focusNode,
+    this.borderStrokeAlign,
+  });
+
+  final BusyCardsYaruFocusedControlBuilder builder;
+  final FocusNode? focusNode;
+  final double? borderStrokeAlign;
+
+  @override
+  State<BusyCardsYaruFocusBorder> createState() =>
+      _BusyCardsYaruFocusBorderState();
+}
+
+class _BusyCardsYaruFocusBorderState extends State<BusyCardsYaruFocusBorder> {
+  late FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _updateFocusNode();
+  }
+
+  @override
+  void didUpdateWidget(covariant BusyCardsYaruFocusBorder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode != widget.focusNode) {
+      _focusNode.removeListener(_handleFocusChange);
+      if (oldWidget.focusNode == null) _focusNode.dispose();
+      _updateFocusNode();
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_handleFocusChange);
+    if (widget.focusNode == null) _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _updateFocusNode() {
+    _focusNode = widget.focusNode ?? FocusNode();
+    _focusNode.addListener(_handleFocusChange);
+  }
+
+  void _handleFocusChange() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final focusVisibility = _BusyCardsKeyboardFocusVisibility.instance
+      ..ensureRegistered();
+    return ValueListenableBuilder<bool>(
+      valueListenable: focusVisibility,
+      builder: (context, keyboardInput, child) => YaruFocusBorder.primary(
+        focused: true,
+        onFocusChange: (_) {},
+        borderColor: _focusNode.hasPrimaryFocus && keyboardInput
+            ? null
+            : Colors.transparent,
+        borderStrokeAlign: widget.borderStrokeAlign,
+        child: child!,
+      ),
+      child: widget.builder(context, _focusNode),
+    );
+  }
+}
+
+class BusyCardsSwitchRow extends StatelessWidget {
+  const BusyCardsSwitchRow({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.onChanged,
+    this.subtitle,
+    this.leading,
+    this.enabled = true,
+  });
+
+  final String title;
+  final String? subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final Widget? leading;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveOnChanged = enabled ? onChanged : null;
+    return BusyCardsYaruFocusBorder(
+      borderStrokeAlign: BorderSide.strokeAlignInside,
+      builder: (context, rowFocusNode) => YaruSwitchListTile(
+        value: value,
+        onChanged: effectiveOnChanged,
+        focusNode: rowFocusNode,
+        control: BusyCardsYaruFocusBorder(
+          builder: (context, controlFocusNode) => YaruSwitch(
+            value: value,
+            onChanged: effectiveOnChanged,
+            focusNode: controlFocusNode,
+            hasFocusBorder: false,
+          ),
+        ),
+        secondary: leading,
+        title: Text(title),
+        subtitle: subtitle == null
+            ? null
+            : _busyCardsGroupedRowSubtitle(
+                context,
+                Text(subtitle!),
+                enabled: enabled,
+              ),
+        shape: const RoundedRectangleBorder(),
+        hoverColor: busyCardsRowHoverColor(context),
+        hasFocusBorder: false,
+      ),
+    );
+  }
+}
+
+class BusyCardsMenuEntry<T> {
+  const BusyCardsMenuEntry({
+    required this.value,
+    required this.label,
+    this.icon,
+    this.nativeIconName,
+    this.child,
+    this.shortcut,
+    this.enabled = true,
+    this.role = BusyCardsMenuEntryRole.command,
+    this.selected = false,
+    this.tooltip,
+    this.destructive = false,
+  });
+
+  final T value;
+  final String label;
+  final IconData? icon;
+  final String? nativeIconName;
+  final Widget? child;
+  final String? shortcut;
+  final bool enabled;
+  final BusyCardsMenuEntryRole role;
+  final bool selected;
+  final String? tooltip;
+  final bool destructive;
+}
+
+enum BusyCardsMenuEntryRole { command, radio, toggle }
+
+@immutable
+final class BusyCardsMenuSelection<T> {
+  const BusyCardsMenuSelection(this.value);
+
+  final T value;
+}
+
+/// Owns one native or Flutter fallback menu presentation.
+///
+/// A session may be dismissed safely after its owner is disposed. Native
+/// dismissal is identity-checked by the host, while fallback dismissal
+/// removes only the exact popup route captured for this presentation.
+final class BusyCardsMenuSession {
+  BusyCardsMenuSession() : _nativeSession = NativeMenuSession();
+
+  final NativeMenuSession _nativeSession;
+  final GlobalKey _fallbackRouteKey = GlobalKey();
+  NativeMenuService _nativeMenuService = const NativeMenuService();
+  Route<dynamic>? _fallbackRoute;
+  bool _started = false;
+  bool _dismissRequested = false;
+
+  bool get _isDismissed => _dismissRequested;
+
+  Future<void> dismiss() async {
+    if (_dismissRequested) {
+      return;
+    }
+    _dismissRequested = true;
+    _removeFallbackRoute();
+    await _nativeMenuService.dismiss(_nativeSession);
+  }
+
+  void _beginPresentation(NativeMenuService nativeMenuService) {
+    if (_started) {
+      throw StateError('A BusyCardsMenuSession can present only one menu.');
+    }
+    _started = true;
+    _nativeMenuService = nativeMenuService;
+  }
+
+  void _captureFallbackRoute() {
+    final itemContext = _fallbackRouteKey.currentContext;
+    if (itemContext == null) {
+      return;
+    }
+    final route = ModalRoute.of(itemContext);
+    if (route == null) {
+      return;
+    }
+    _fallbackRoute = route;
+    if (_dismissRequested) {
+      _removeFallbackRoute();
+    }
+  }
+
+  void _releaseFallbackRoute() {
+    _fallbackRoute = null;
+  }
+
+  void _removeFallbackRoute() {
+    final route = _fallbackRoute;
+    final navigator = route?.navigator;
+    if (route != null && navigator != null && route.isActive) {
+      navigator.removeRoute(route);
+    }
+    _fallbackRoute = null;
+  }
+}
+
+/// Presents a semantic menu at [anchorRect], [anchorContext], or [anchorPoint].
+///
+/// Linux delegates the menu surface, rows, focus, keyboard navigation, and
+/// dismissal to GTK. The Flutter route exists only for hosts where that
+/// bridge is unavailable and inherits Yaru's popup-menu theme unchanged.
+Future<BusyCardsMenuSelection<T>?> showBusyCardsMenu<T>({
+  required BuildContext context,
+  required List<BusyCardsMenuEntry<T>> entries,
+  BuildContext? anchorContext,
+  Offset? anchorPoint,
+  Rect? anchorRect,
+  NativeMenuService nativeMenuService = const NativeMenuService(),
+  BusyCardsMenuSession? session,
+  bool focusFirst = false,
+  bool preferAbove = false,
+}) async {
+  assert(
+    anchorRect == null || (anchorContext == null && anchorPoint == null),
+    'anchorRect cannot be combined with anchorContext or anchorPoint.',
+  );
+  if (entries.isEmpty) {
+    return null;
+  }
+  final entrySnapshot = List<BusyCardsMenuEntry<T>>.unmodifiable(entries);
+  _validateBusyCardsMenuEntries(entrySnapshot);
+  final presentation = session ?? BusyCardsMenuSession();
+  if (presentation._isDismissed) {
+    return null;
+  }
+  presentation._beginPresentation(nativeMenuService);
+  final anchor =
+      anchorRect ??
+      _busyCardsMenuAnchorRect(
+        anchorContext ?? context,
+        anchorPoint: anchorPoint,
+      );
+  final nativeResult = await nativeMenuService.show(
+    session: presentation._nativeSession,
+    anchor: anchor,
+    entries: _nativeMenuEntries(entrySnapshot),
+    focusFirst: focusFirst,
+    preferAbove: preferAbove,
+  );
+  if (presentation._isDismissed) {
+    return null;
+  }
+  if (nativeResult.available) {
+    return _busyCardsMenuValueAt(entrySnapshot, nativeResult.selectedIndex);
+  }
+  if (!context.mounted) {
+    return null;
+  }
+  final selectedIndex = await _showBusyCardsFlutterMenu(
+    context: context,
+    anchor: anchor,
+    entries: entrySnapshot,
+    session: presentation,
+    focusFirst: focusFirst,
+  );
+  if (presentation._isDismissed) {
+    return null;
+  }
+  return _busyCardsMenuValueAt(entrySnapshot, selectedIndex);
+}
+
+void _validateBusyCardsMenuEntries<T>(List<BusyCardsMenuEntry<T>> entries) {
+  if (entries.any(
+    (entry) => entry.role == BusyCardsMenuEntryRole.command && entry.selected,
+  )) {
+    throw ArgumentError.value(
+      entries,
+      'entries',
+      'Command menu entries cannot be selected.',
+    );
+  }
+  final radioEntries = entries
+      .where((entry) => entry.role == BusyCardsMenuEntryRole.radio)
+      .toList(growable: false);
+  if (radioEntries.isNotEmpty &&
+      radioEntries.where((entry) => entry.selected).length != 1) {
+    throw ArgumentError.value(
+      entries,
+      'entries',
+      'A single-choice menu must have exactly one selected radio entry.',
+    );
+  }
+  if (radioEntries.any((entry) => !entry.enabled)) {
+    throw ArgumentError.value(
+      entries,
+      'entries',
+      'Single-choice radio entries must all be enabled.',
+    );
+  }
+}
+
+Rect _busyCardsMenuAnchorRect(
+  BuildContext anchorContext, {
+  Offset? anchorPoint,
+}) {
+  if (anchorPoint != null) {
+    return Rect.fromLTWH(anchorPoint.dx, anchorPoint.dy, 0, 0);
+  }
+  final renderObject = anchorContext.findRenderObject();
+  if (renderObject is! RenderBox || !renderObject.hasSize) {
+    return Rect.zero;
+  }
+  return renderObject.localToGlobal(Offset.zero) & renderObject.size;
+}
+
+Rect _busyCardsMenuControlAnchorRect({
+  required BuildContext triggerContext,
+  required BuildContext? affordanceContext,
+}) {
+  final triggerRect = _busyCardsMenuAnchorRect(triggerContext);
+  if (affordanceContext == null) {
+    return triggerRect;
+  }
+  final affordanceRect = _busyCardsMenuAnchorRect(affordanceContext);
+  if (triggerRect.isEmpty || affordanceRect.isEmpty) {
+    return triggerRect;
+  }
+  return affordanceRect;
+}
+
+List<NativeMenuEntry> _nativeMenuEntries<T>(
+  List<BusyCardsMenuEntry<T>> entries,
+) {
+  return [
+    for (final entry in entries)
+      NativeMenuEntry(
+        label: entry.label,
+        iconName:
+            entry.nativeIconName ??
+            BusyCardsGlyphs.nativeMenuIconName(entry.icon),
+        enabled: entry.enabled,
+        role: switch (entry.role) {
+          BusyCardsMenuEntryRole.command => NativeMenuEntryRole.command,
+          BusyCardsMenuEntryRole.radio => NativeMenuEntryRole.radio,
+          BusyCardsMenuEntryRole.toggle => NativeMenuEntryRole.toggle,
+        },
+        selected: entry.selected,
+        shortcut: entry.shortcut,
+      ),
+  ];
+}
+
+BusyCardsMenuSelection<T>? _busyCardsMenuValueAt<T>(
+  List<BusyCardsMenuEntry<T>> entries,
+  int? index,
+) {
+  if (index == null || index < 0 || index >= entries.length) {
+    return null;
+  }
+  final entry = entries[index];
+  return entry.enabled ? BusyCardsMenuSelection(entry.value) : null;
+}
+
+Future<int?> _showBusyCardsFlutterMenu<T>({
+  required BuildContext context,
+  required Rect anchor,
+  required List<BusyCardsMenuEntry<T>> entries,
+  required BusyCardsMenuSession session,
+  required bool focusFirst,
+}) async {
+  final navigator = Navigator.of(context);
+  final overlay = navigator.overlay?.context.findRenderObject();
+  if (overlay is! RenderBox || !overlay.hasSize) {
+    return null;
+  }
+  final localAnchor = Rect.fromPoints(
+    overlay.globalToLocal(anchor.topLeft),
+    overlay.globalToLocal(anchor.bottomRight),
+  );
+  final menuAnchor = Rect.fromLTWH(
+    localAnchor.left,
+    localAnchor.bottom,
+    localAnchor.width,
+    0,
+  );
+  final selectedRadioIndex = entries.indexWhere(
+    (entry) => entry.role == BusyCardsMenuEntryRole.radio && entry.selected,
+  );
+  final firstEnabledIndex = entries.indexWhere((entry) => entry.enabled);
+  final firstEnabledKey = focusFirst && firstEnabledIndex >= 0
+      ? GlobalKey()
+      : null;
+  final routeKey = session._fallbackRouteKey;
+  final menuHoverColor = BusyCardsSurfaceColors.of(context).controlHover;
+  final selection = showMenu<int>(
+    context: context,
+    position: RelativeRect.fromRect(menuAnchor, Offset.zero & overlay.size),
+    items: [
+      for (var index = 0; index < entries.length; index += 1)
+        _BusyCardsPopupMenuItem<int>(
+          value: index,
+          enabled: entries[index].enabled,
+          hoverColor: menuHoverColor,
+          child: _busyCardsFocusableFallbackEntry(
+            context,
+            entries[index],
+            selectionIndicator: switch (entries[index].role) {
+              BusyCardsMenuEntryRole.command => null,
+              BusyCardsMenuEntryRole.radio => ExcludeSemantics(
+                child: IgnorePointer(
+                  child: YaruRadio<int>(
+                    value: index,
+                    groupValue: selectedRadioIndex,
+                    onChanged: (_) {},
+                    hasFocusBorder: false,
+                  ),
+                ),
+              ),
+              BusyCardsMenuEntryRole.toggle => ExcludeSemantics(
+                child: IgnorePointer(
+                  child: YaruCheckbox(
+                    value: entries[index].selected,
+                    onChanged: (_) {},
+                    hasFocusBorder: false,
+                  ),
+                ),
+              ),
+            },
+            focusKey: index == firstEnabledIndex ? firstEnabledKey : null,
+            routeKey: index == 0 ? routeKey : null,
+          ),
+        ),
+    ],
+    requestFocus: true,
+  );
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    session._captureFallbackRoute();
+    if (firstEnabledKey != null && !session._isDismissed) {
+      final itemContext = firstEnabledKey.currentContext;
+      if (itemContext != null) {
+        Focus.of(itemContext).requestFocus();
+      }
+    }
+  });
+  try {
+    return await selection;
+  } finally {
+    session._releaseFallbackRoute();
+  }
+}
+
+/// A framework popup row with BusyCards's GTK menu-hover role in scope.
+///
+/// [PopupMenuItem] otherwise reads the application-wide Material hover color,
+/// which is intentionally much quieter than GTK's menu-row state. Subclassing
+/// keeps the framework's menu semantics, focus handling, keyboard navigation,
+/// geometry, and ink response intact; only the inherited semantic state color
+/// is narrowed to this row.
+class _BusyCardsPopupMenuItem<T> extends PopupMenuItem<T> {
+  const _BusyCardsPopupMenuItem({
+    required super.value,
+    required super.enabled,
+    required this.hoverColor,
+    required super.child,
+  });
+
+  final Color hoverColor;
+
+  @override
+  PopupMenuItemState<T, _BusyCardsPopupMenuItem<T>> createState() =>
+      _BusyCardsPopupMenuItemState<T>();
+}
+
+class _BusyCardsPopupMenuItemState<T>
+    extends PopupMenuItemState<T, _BusyCardsPopupMenuItem<T>> {
+  @override
+  Widget build(BuildContext context) {
+    final menuTheme = Theme.of(context).copyWith(hoverColor: widget.hoverColor);
+    return Theme(
+      data: menuTheme,
+      child: Builder(builder: (context) => super.build(context)),
+    );
+  }
+}
+
+Widget _busyCardsFocusableFallbackEntry<T>(
+  BuildContext context,
+  BusyCardsMenuEntry<T> entry, {
+  required Widget? selectionIndicator,
+  required GlobalKey? focusKey,
+  required GlobalKey? routeKey,
+}) {
+  Widget child = _busyCardsFallbackMenuEntry(
+    context,
+    entry,
+    selectionIndicator: selectionIndicator,
+  );
+  switch (entry.role) {
+    case BusyCardsMenuEntryRole.command:
+      break;
+    case BusyCardsMenuEntryRole.radio:
+      child = Semantics(
+        selected: entry.selected,
+        inMutuallyExclusiveGroup: true,
+        child: child,
+      );
+    case BusyCardsMenuEntryRole.toggle:
+      child = Semantics(checked: entry.selected, child: child);
+  }
+  if (focusKey != null) {
+    child = KeyedSubtree(key: focusKey, child: child);
+  }
+  if (routeKey != null) {
+    child = KeyedSubtree(key: routeKey, child: child);
+  }
+  return child;
+}
+
+Widget _busyCardsFallbackMenuEntry<T>(
+  BuildContext context,
+  BusyCardsMenuEntry<T> entry, {
+  required Widget? selectionIndicator,
+}) {
+  final foreground = entry.destructive
+      ? Theme.of(context).colorScheme.error
+      : null;
+  final label =
+      entry.child ??
+      Text(
+        entry.label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: foreground == null ? null : TextStyle(color: foreground),
+      );
+  final shortcut = entry.shortcut == null || entry.shortcut!.isEmpty
+      ? null
+      : Directionality(
+          textDirection: TextDirection.ltr,
+          child: Text(
+            entry.shortcut!,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
+        );
+  final content =
+      entry.icon == null && selectionIndicator == null && shortcut == null
+      ? label
+      : Row(
+          children: [
+            if (selectionIndicator != null) ...[
+              selectionIndicator,
+              const SizedBox(width: BusyCardsSpacing.sm),
+            ],
+            if (entry.icon != null) ...[
+              Icon(entry.icon, color: foreground),
+              const SizedBox(width: BusyCardsSpacing.sm),
+            ],
+            Expanded(child: label),
+            if (shortcut != null) ...[
+              const SizedBox(width: BusyCardsSpacing.md),
+              shortcut,
+            ],
+          ],
+        );
+  if (entry.enabled || entry.tooltip == null) {
+    return content;
+  }
+  return Tooltip(message: entry.tooltip!, child: content);
+}
+
+typedef BusyCardsMenuTriggerBuilder = Widget Function(
+  BuildContext context,
+  BusyCardsMenuTriggerDetails trigger,
+);
+
+/// Interaction and geometry supplied to a custom [BusyCardsMenuButton] trigger.
+///
+/// The trigger may make a larger control clickable while marking the native
+/// relative widget with [anchor]. Menus are positioned from that widget's
+/// exact geometry, matching `GtkPopover.relative-to`.
+@immutable
+class BusyCardsMenuTriggerDetails {
+  const BusyCardsMenuTriggerDetails._({
+    required this.onPressed,
+    required this.focusNode,
+    required this.isOpen,
+    required GlobalKey menuAnchorKey,
+  }) : _menuAnchorKey = menuAnchorKey;
+
+  final VoidCallback? onPressed;
+  final FocusNode focusNode;
+  final bool isOpen;
+  final GlobalKey _menuAnchorKey;
+
+  /// Marks the visual affordance used as the menu's native relative widget.
+  ///
+  /// A custom trigger should call this exactly once. When omitted, the shared
+  /// menu adapter safely falls back to the complete trigger bounds.
+  Widget anchor({required Widget child}) {
+    return KeyedSubtree(key: _menuAnchorKey, child: child);
+  }
+}
+
+/// Controls keyboard-driven opening of a [BusyCardsMenuButton].
+///
+/// Pointer activation remains owned by the button so a mouse click does not
+/// paint a keyboard focus ring. Commands and shortcuts use
+/// [openForKeyboard], which transfers focus to the first enabled menu item.
+class BusyCardsMenuController {
+  Object? _owner;
+  bool Function()? _openForKeyboard;
+  VoidCallback? _close;
+  bool Function()? _isOpen;
+
+  bool get isAttached => _owner != null;
+
+  bool get isOpen => _isOpen?.call() ?? false;
+
+  /// Opens the attached menu in keyboard modality.
+  ///
+  /// Returns false when the menu is not attached, is disabled, or is already
+  /// open.
+  bool openForKeyboard() {
+    final open = _openForKeyboard;
+    if (open == null) {
+      return false;
+    }
+    return open();
+  }
+
+  void close() => _close?.call();
+
+  void _attach({
+    required Object owner,
+    required bool Function() openForKeyboard,
+    required VoidCallback close,
+    required bool Function() isOpen,
+  }) {
+    // Flutter can mount a replacement responsive subtree before disposing its
+    // predecessor. Point commands at the newest attachment; the owner check
+    // in [_detach] prevents the retiring state from detaching its successor.
+    _owner = owner;
+    _openForKeyboard = openForKeyboard;
+    _close = close;
+    _isOpen = isOpen;
+  }
+
+  void _detach(Object owner) {
+    if (!identical(_owner, owner)) {
+      return;
+    }
+    _owner = null;
+    _openForKeyboard = null;
+    _close = null;
+    _isOpen = null;
+  }
+}
+
+class BusyCardsMenuButton<T> extends StatefulWidget {
+  const BusyCardsMenuButton({
+    super.key,
+    required this.tooltip,
+    required this.entries,
+    required this.onSelected,
+    this.icon = const Icon(YaruIcons.view_more),
+    this.triggerBuilder,
+    this.controller,
+    this.enabled = true,
+    this.highlightWhenOpen = true,
+    this.nativeMenuService = const NativeMenuService(),
+  });
+
+  final String tooltip;
+  final Widget icon;
+  final List<BusyCardsMenuEntry<T>> entries;
+  final ValueChanged<T> onSelected;
+  final BusyCardsMenuTriggerBuilder? triggerBuilder;
+  final BusyCardsMenuController? controller;
+  final bool enabled;
+  final bool highlightWhenOpen;
+  final NativeMenuService nativeMenuService;
+
+  @override
+  State<BusyCardsMenuButton<T>> createState() => _BusyCardsMenuButtonState<T>();
+}
+
+class _BusyCardsMenuButtonState<T> extends State<BusyCardsMenuButton<T>> {
+  final _triggerKey = GlobalKey();
+  final _menuAnchorKey = GlobalKey();
+  late final FocusNode _triggerFocusNode;
+  BusyCardsMenuSession? _activeMenuSession;
+  bool _menuOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _triggerFocusNode = FocusNode(
+      debugLabel: 'BusyCards menu trigger',
+      onKeyEvent: _handleTriggerKeyEvent,
+    );
+    _attachExternalController();
+  }
+
+  @override
+  void didUpdateWidget(covariant BusyCardsMenuButton<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.controller, widget.controller)) {
+      oldWidget.controller?._detach(this);
+      _attachExternalController();
+    }
+    if (oldWidget.enabled && !widget.enabled && _menuOpen) {
+      _closeMenu();
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller?._detach(this);
+    final session = _activeMenuSession;
+    _activeMenuSession = null;
+    if (session != null) {
+      unawaited(session.dismiss());
+    }
+    _triggerFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final triggerBuilder = widget.triggerBuilder;
+    final triggerDetails = BusyCardsMenuTriggerDetails._(
+      onPressed: widget.enabled ? _toggleMenu : null,
+      focusNode: _triggerFocusNode,
+      isOpen: _menuOpen,
+      menuAnchorKey: _menuAnchorKey,
+    );
+    final trigger = triggerBuilder != null
+        ? triggerBuilder(context, triggerDetails)
+        : triggerDetails.anchor(
+            child: YaruIconButton(
+              tooltip: widget.tooltip,
+              icon: widget.icon,
+              focusNode: _triggerFocusNode,
+              isSelected: widget.highlightWhenOpen && _menuOpen,
+              onPressed: widget.enabled ? _toggleMenu : null,
+            ),
+          );
+    return KeyedSubtree(
+      key: _triggerKey,
+      child: triggerBuilder == null
+          ? Semantics(expanded: _menuOpen, child: trigger)
+          : trigger,
+    );
+  }
+
+  KeyEventResult _handleTriggerKeyEvent(FocusNode node, KeyEvent event) {
+    if (!widget.enabled || event is! KeyDownEvent) {
+      return KeyEventResult.ignored;
+    }
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.space) {
+      if (!_menuOpen) {
+        _openForKeyboard();
+      }
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.escape && _menuOpen) {
+      _closeMenu();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  void _toggleMenu() {
+    if (_menuOpen) {
+      _closeMenu();
+      return;
+    }
+    unawaited(_openMenu());
+  }
+
+  Future<void> _openMenu({bool focusFirst = false}) async {
+    final triggerContext = _triggerKey.currentContext;
+    if (!widget.enabled ||
+        _menuOpen ||
+        triggerContext == null ||
+        widget.entries.isEmpty) {
+      return;
+    }
+    final entries = List<BusyCardsMenuEntry<T>>.unmodifiable(widget.entries);
+    final onSelected = widget.onSelected;
+    final nativeMenuService = widget.nativeMenuService;
+    final session = BusyCardsMenuSession();
+    _activeMenuSession = session;
+    setState(() {
+      _menuOpen = true;
+    });
+
+    BusyCardsMenuSelection<T>? selection;
+    try {
+      final anchor = _busyCardsMenuControlAnchorRect(
+        triggerContext: triggerContext,
+        affordanceContext: _menuAnchorKey.currentContext,
+      );
+      selection = await showBusyCardsMenu<T>(
+        context: triggerContext,
+        anchorRect: anchor,
+        entries: entries,
+        nativeMenuService: nativeMenuService,
+        session: session,
+        focusFirst: focusFirst,
+      );
+    } finally {
+      if (mounted && identical(_activeMenuSession, session)) {
+        setState(() {
+          _activeMenuSession = null;
+          _menuOpen = false;
+        });
+      }
+    }
+    if (mounted && !session._isDismissed && selection != null) {
+      onSelected(selection.value);
+    }
+  }
+
+  bool _openForKeyboard() {
+    if (!widget.enabled || _menuOpen || widget.entries.isEmpty) {
+      return false;
+    }
+    _triggerFocusNode.requestFocus();
+    unawaited(_openMenu(focusFirst: true));
+    return true;
+  }
+
+  void _closeMenu() {
+    final session = _activeMenuSession;
+    if (session == null) {
+      return;
+    }
+    // Release the trigger synchronously. Native dismissal and the matching
+    // `show` response travel over separate platform messages, so waiting for
+    // that response would leave this button looking open and make a quick
+    // second click dismiss the same session again instead of reopening.
+    setState(() {
+      _activeMenuSession = null;
+      _menuOpen = false;
+    });
+    unawaited(session.dismiss());
+  }
+
+  void _attachExternalController() {
+    widget.controller?._attach(
+      owner: this,
+      openForKeyboard: _openForKeyboard,
+      close: _closeMenu,
+      isOpen: () => _menuOpen,
+    );
+  }
+}
+
+class BusyCardsEmptyState extends StatelessWidget {
+  const BusyCardsEmptyState({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.message,
+    this.actions = const [],
+  });
+
+  final IconData icon;
+  final String title;
+  final String? message;
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final hasMessage = message != null && message!.isNotEmpty;
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(BusyCardsSpacing.xl),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Semantics(
+            container: true,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                ExcludeSemantics(
+                  child: Icon(
+                    icon,
+                    size: 56,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: BusyCardsSpacing.lg),
+                Semantics(
+                  header: true,
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (hasMessage) ...[
+                  const SizedBox(height: BusyCardsSpacing.sm),
+                  Text(
+                    message!,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+                if (actions.isNotEmpty) ...[
+                  const SizedBox(height: BusyCardsSpacing.lg),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: BusyCardsSpacing.sm,
+                    runSpacing: BusyCardsSpacing.sm,
+                    children: actions,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class BusyCardsToolbar extends StatelessWidget {
+  const BusyCardsToolbar({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.actions = const [],
+  });
+
+  final String title;
+  final String? subtitle;
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final titleWidget = subtitle == null || subtitle!.isEmpty
+        ? Text(title, maxLines: 1, overflow: TextOverflow.ellipsis)
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(
+                subtitle!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          );
+
+    return YaruTitleBar(
+      title: titleWidget,
+      centerTitle: false,
+      isClosable: false,
+      isMaximizable: false,
+      isMinimizable: false,
+      actions: actions.isEmpty
+          ? null
+          : [
+              Padding(
+                padding: const EdgeInsetsDirectional.only(
+                  end: BusyCardsSpacing.sm,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final action in actions) ...[
+                      action,
+                      if (action != actions.last)
+                        const SizedBox(width: BusyCardsSpacing.sm),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+    );
+  }
+}
+
+class BusyCardsToolbarButton extends StatelessWidget {
+  const BusyCardsToolbarButton({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.tooltip,
+    required this.onPressed,
+    this.suggested = false,
+    this.compact = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final String tooltip;
+  final VoidCallback? onPressed;
+  final bool suggested;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    if (compact) {
+      return YaruIconButton(
+        tooltip: tooltip,
+        onPressed: onPressed,
+        icon: Icon(icon),
+      );
+    }
+
+    final child = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: BusyCardsSizes.iconMd),
+        const SizedBox(width: BusyCardsSpacing.sm),
+        Text(label),
+      ],
+    );
+    final button = suggested
+        ? BusyCardsPushButton.suggested(onPressed: onPressed, child: child)
+        : BusyCardsPushButton.standard(onPressed: onPressed, child: child);
+    return Tooltip(message: tooltip, child: button);
+  }
+}
+
+class BusyCardsEditorHeader extends StatelessWidget {
+  const BusyCardsEditorHeader({
+    super.key,
+    required this.title,
+    required this.cancelLabel,
+    required this.saveLabel,
+    required this.onCancel,
+    required this.onSave,
+    this.saving = false,
+    this.cancelEnabled = true,
+  });
+
+  final String title;
+  final String cancelLabel;
+  final String saveLabel;
+  final VoidCallback onCancel;
+  final VoidCallback? onSave;
+  final bool saving;
+  final bool cancelEnabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        BusyCardsSpacing.headerInset,
+        BusyCardsSpacing.headerInset,
+        BusyCardsSpacing.headerInset,
+        BusyCardsSpacing.headerInset,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              heightFactor: 1,
+              child: BusyCardsPushButton.standard(
+                onPressed: cancelEnabled ? onCancel : null,
+                child: Text(cancelLabel),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          Expanded(
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              heightFactor: 1,
+              child: BusyCardsPushButton.suggested(
+                onPressed: onSave,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Opacity(
+                      opacity: saving ? 0 : 1,
+                      alwaysIncludeSemantics: true,
+                      child: Text(saveLabel),
+                    ),
+                    if (saving)
+                      const ExcludeSemantics(
+                        child: SizedBox.square(
+                          dimension: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A controlled, theme-owned selector for mutually exclusive content modes.
+///
+/// [YaruTabBar] owns the visual geometry and interaction treatment. This
+/// adapter only validates the domain choices and keeps its controller
+/// synchronized with the selected value.
+class BusyCardsModeSwitcher<T> extends StatefulWidget {
+  BusyCardsModeSwitcher({
+    super.key,
+    required List<T> values,
+    required this.selected,
+    required this.labelFor,
+    required this.onSelected,
+  }) : values = List<T>.unmodifiable(values) {
+    if (this.values.length < 2) {
+      throw ArgumentError.value(
+        values,
+        'values',
+        'A mode switcher requires multiple values.',
+      );
+    }
+    if (this.values.toSet().length != this.values.length) {
+      throw ArgumentError.value(
+        values,
+        'values',
+        'A mode switcher requires unique values.',
+      );
+    }
+    if (!this.values.contains(selected)) {
+      throw ArgumentError.value(
+        selected,
+        'selected',
+        'The selected mode must be present in values.',
+      );
+    }
+  }
+
+  final List<T> values;
+  final T selected;
+  final String Function(T value) labelFor;
+  final ValueChanged<T> onSelected;
+
+  @override
+  State<BusyCardsModeSwitcher<T>> createState() =>
+      _BusyCardsModeSwitcherState<T>();
+}
+
+class _BusyCardsModeSwitcherState<T> extends State<BusyCardsModeSwitcher<T>>
+    with TickerProviderStateMixin {
+  late TabController _controller;
+
+  int get _selectedIndex => widget.values.indexOf(widget.selected);
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = _newController();
+  }
+
+  @override
+  void didUpdateWidget(covariant BusyCardsModeSwitcher<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.values.length != widget.values.length) {
+      _controller.dispose();
+      _controller = _newController();
+      return;
+    }
+    if (_controller.index != _selectedIndex) {
+      _controller.index = _selectedIndex;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  TabController _newController() {
+    return TabController(
+      length: widget.values.length,
+      initialIndex: _selectedIndex,
+      vsync: this,
+    );
+  }
+
+  void _restoreExternalSelectionAfterInteraction() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _controller.index == _selectedIndex) {
+        return;
+      }
+      _controller.index = _selectedIndex;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return YaruTabBar(
+      tabController: _controller,
+      tabs: [
+        for (final value in widget.values)
+          YaruTab(label: widget.labelFor(value)),
+      ],
+      onTap: (index) {
+        final value = widget.values[index];
+        if (value != widget.selected) {
+          _restoreExternalSelectionAfterInteraction();
+          widget.onSelected(value);
+        }
+      },
+    );
+  }
+}
+
+class BusyCardsEditorScrollBody extends StatelessWidget {
+  const BusyCardsEditorScrollBody({
+    super.key,
+    required this.child,
+    this.maxWidth = 640,
+  });
+
+  final Widget child;
+  final double maxWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    return YaruScrollViewUndershoot.builder(
+      endUndershoot: false,
+      builder: (context, controller) => BusyCardsClamp(
+        maxWidth: maxWidth,
+        margin: EdgeInsets.zero,
+        padding: const EdgeInsets.fromLTRB(
+          BusyCardsSpacing.lg,
+          BusyCardsSpacing.headerInset,
+          BusyCardsSpacing.lg,
+          BusyCardsSpacing.lg,
+        ),
+        controller: controller,
+        child: child,
+      ),
+    );
+  }
+}
+
+class BusyCardsModalEditorScaffold extends StatelessWidget {
+  const BusyCardsModalEditorScaffold({
+    super.key,
+    required this.title,
+    required this.cancelLabel,
+    required this.saveLabel,
+    required this.onCancel,
+    required this.onSave,
+    required this.children,
+    this.saving = false,
+    this.cancelEnabled = true,
+    this.contentMaxWidth = 640,
+  });
+
+  final String title;
+  final String cancelLabel;
+  final String saveLabel;
+  final VoidCallback onCancel;
+  final VoidCallback? onSave;
+  final bool saving;
+  final bool cancelEnabled;
+  final double contentMaxWidth;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      scopesRoute: true,
+      namesRoute: true,
+      explicitChildNodes: true,
+      label: title,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          BusyCardsEditorHeader(
+            title: title,
+            cancelLabel: cancelLabel,
+            saveLabel: saveLabel,
+            onCancel: onCancel,
+            onSave: onSave,
+            saving: saving,
+            cancelEnabled: cancelEnabled,
+          ),
+          Flexible(
+            child: BusyCardsEditorScrollBody(
+              maxWidth: contentMaxWidth,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: children,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class BusyCardsModalEditorSurface extends StatelessWidget {
+  const BusyCardsModalEditorSurface({
+    super.key,
+    required this.child,
+    this.minWidth = 0,
+    this.maxWidth = BusyCardsSizes.compactDetailsWidth,
+    this.maxHeight,
+    this.insetPadding = EdgeInsets.zero,
+  });
+
+  final Widget child;
+  final double minWidth;
+  final double maxWidth;
+  final double? maxHeight;
+  final EdgeInsets insetPadding;
+
+  @override
+  Widget build(BuildContext context) {
+    final editorSurface = Theme.of(context).scaffoldBackgroundColor;
+    final effectiveMaxWidth = maxWidth.isFinite
+        ? maxWidth.clamp(0.0, double.infinity).toDouble()
+        : maxWidth;
+    final effectiveMinWidth = minWidth
+        .clamp(
+          0.0,
+          effectiveMaxWidth.isFinite ? effectiveMaxWidth : double.infinity,
+        )
+        .toDouble();
+    final effectiveMaxHeight = maxHeight == null
+        ? double.infinity
+        : maxHeight!.clamp(0.0, double.infinity).toDouble();
+
+    return BusyCardsSurfaceScope(
+      role: BusyCardsSurfaceRole.window,
+      child: Dialog(
+        backgroundColor: editorSurface,
+        surfaceTintColor: editorSurface,
+        insetPadding: insetPadding,
+        insetAnimationDuration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : BusyCardsMotion.dialogInsets,
+        insetAnimationCurve: BusyCardsMotion.dialogInsetsCurve,
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: effectiveMinWidth,
+            maxWidth: effectiveMaxWidth,
+            maxHeight: effectiveMaxHeight,
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class BusyCardsInlineBadge extends StatelessWidget {
+  const BusyCardsInlineBadge({super.key, required this.label, this.tooltip});
+
+  final String label;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final badge = YaruInfoBadge(
+      yaruInfoType: YaruInfoType.information,
+      color: colorScheme.outline,
+      padding: const EdgeInsets.symmetric(
+        horizontal: BusyCardsSpacing.sm,
+        vertical: BusyCardsSpacing.xxs,
+      ),
+      borderRadius: BorderRadius.circular(BusyCardsRadius.sm),
+      style: Theme.of(context).textTheme.labelSmall
+          ?.copyWith(color: colorScheme.onSurfaceVariant),
+      title: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+    );
+    return tooltip == null ? badge : Tooltip(message: tooltip!, child: badge);
+  }
+}
+
+/// Yaru dialog chrome bound to BusyCards's semantic dialog surface.
+///
+/// Yaru otherwise falls back to [ThemeData.scaffoldBackgroundColor], which is
+/// the application window role and can differ from [DialogThemeData.backgroundColor].
+/// Keeping this adapter shared prevents a dialog title bar and body from
+/// resolving different native surface roles.
+Color busyCardsDialogSurfaceColor(BuildContext context) {
+  return DialogTheme.of(context).backgroundColor ??
+      BusyCardsSurfaceColors.of(context).dialog;
+}
+
+class BusyCardsDialogTitleBar extends StatelessWidget {
+  const BusyCardsDialogTitleBar({
+    super.key,
+    this.title,
+    this.centerTitle = true,
+    this.closeSemanticLabel,
+    this.showDividerInHighContrast = true,
+  });
+
+  final Widget? title;
+  final bool centerTitle;
+  final String? closeSemanticLabel;
+  final bool showDividerInHighContrast;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = BusyCardsSurfaceColors.of(context);
+    final dialogSurface = busyCardsDialogSurfaceColor(context);
+    return Theme(
+      data: theme.copyWith(
+        appBarTheme: theme.appBarTheme.copyWith(
+          backgroundColor: dialogSurface,
+          surfaceTintColor: dialogSurface,
+          shadowColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+        ),
+      ),
+      child: YaruDialogTitleBar(
+        title: title,
+        centerTitle: centerTitle,
+        isActive: true,
+        backgroundColor: dialogSurface,
+        border: showDividerInHighContrast && theme.colorScheme.isHighContrast
+            ? BorderSide(color: colors.divider)
+            : BorderSide.none,
+        closeSemanticLabel: closeSemanticLabel,
+        heroTag: null,
+      ),
+    );
+  }
+}
+
+class BusyCardsDialogShell extends StatelessWidget {
+  const BusyCardsDialogShell({
+    super.key,
+    required this.title,
+    required this.children,
+    this.maxWidth = 520,
+    this.header,
+    this.actions = const [],
+  });
+
+  final String title;
+  final List<Widget> children;
+  final double maxWidth;
+  final Widget? header;
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final dialogSurface = busyCardsDialogSurfaceColor(context);
+    return Semantics(
+      scopesRoute: true,
+      namesRoute: true,
+      explicitChildNodes: true,
+      label: title,
+      child: BusyCardsSurfaceScope(
+        role: BusyCardsSurfaceRole.dialog,
+        child: Dialog(
+          backgroundColor: dialogSurface,
+          surfaceTintColor: dialogSurface,
+          clipBehavior: Clip.antiAlias,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                header ?? BusyCardsDialogTitleBar(title: Text(title)),
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(BusyCardsSpacing.lg),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: children,
+                    ),
+                  ),
+                ),
+                if (actions.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(BusyCardsSpacing.lg),
+                    child: OverflowBar(
+                      alignment: MainAxisAlignment.end,
+                      spacing: BusyCardsSpacing.sm,
+                      overflowSpacing: BusyCardsSpacing.sm,
+                      children: actions,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class BusyCardsPromptDialog extends StatefulWidget {
+  const BusyCardsPromptDialog({
+    super.key,
+    required this.title,
+    required this.label,
+    required this.actionLabel,
+    this.initialValue,
+    this.message,
+  });
+
+  final String title;
+  final String label;
+  final String actionLabel;
+  final String? initialValue;
+  final String? message;
+
+  @override
+  State<BusyCardsPromptDialog> createState() => _BusyCardsPromptDialogState();
+}
+
+class _BusyCardsPromptDialogState extends State<BusyCardsPromptDialog> {
+  late final TextEditingController _controller;
+  late bool _canSubmit;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialValue = widget.initialValue ?? '';
+    _controller = TextEditingController(text: initialValue)
+      ..selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: initialValue.length,
+      )
+      ..addListener(_handleTextChanged);
+    _canSubmit = _hasValue;
+  }
+
+  bool get _hasValue => _controller.text.trim().isNotEmpty;
+
+  void _handleTextChanged() {
+    final canSubmit = _hasValue;
+    if (canSubmit != _canSubmit) {
+      setState(() => _canSubmit = canSubmit);
+    }
+  }
+
+  void _submit() {
+    if (_hasValue) {
+      Navigator.of(context).pop(_controller.text);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BusyCardsDialogShell(
+      title: widget.title,
+      header: BusyCardsEditorHeader(
+        title: widget.title,
+        cancelLabel: context.l10n.cancel,
+        saveLabel: widget.actionLabel,
+        onCancel: () => Navigator.of(context).pop(),
+        onSave: _canSubmit ? _submit : null,
+      ),
+      children: [
+        if (widget.message != null && widget.message!.isNotEmpty)
+          Text(widget.message!),
+        BusyCardsGroupedList(
+          filled: true,
+          children: [
+            YaruListTile.square(
+              title: TextFormField(
+                controller: _controller,
+                autofocus: true,
+                textInputAction: TextInputAction.done,
+                decoration: busyCardsGroupedTextFieldDecoration(
+                  context,
+                  labelText: widget.label,
+                ),
+                onFieldSubmitted: (_) => _submit(),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class BusyCardsConfirmDialog extends StatelessWidget {
+  const BusyCardsConfirmDialog({
+    super.key,
+    required this.title,
+    required this.message,
+    required this.confirmLabel,
+    this.destructive = false,
+  });
+
+  final String title;
+  final String message;
+  final String confirmLabel;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    return BusyCardsDialogShell(
+      title: title,
+      actions: [
+        BusyCardsPushButton.standard(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(context.l10n.cancel),
+        ),
+        if (destructive)
+          BusyCardsPushButton.destructive(
+            context: context,
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(confirmLabel),
+          )
+        else
+          BusyCardsPushButton.suggested(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(confirmLabel),
+          ),
+      ],
+      children: [Text(message)],
+    );
+  }
+}

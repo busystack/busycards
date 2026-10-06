@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="exec-maven-plugin-3.6.7">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/offline-inputs/inputs/maven-repository/org/codehaus/mojo/exec-maven-plugin/3.6.3/exec-maven-plugin-3.6.3.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

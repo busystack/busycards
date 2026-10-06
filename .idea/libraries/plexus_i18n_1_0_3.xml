@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="plexus-i18n-1.0.3">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/portable-inputs/inputs/maven-repository/org/codehaus/plexus/plexus-i18n/1.0.0/plexus-i18n-1.0.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

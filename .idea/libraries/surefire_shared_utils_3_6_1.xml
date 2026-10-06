@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="surefire-shared-utils-3.6.1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/portable-inputs/inputs/maven-repository/org/apache/maven/surefire/surefire-shared-utils/3.6.0/surefire-shared-utils-3.6.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.busystack.busycards</id>
+  <name>BusyCards</name>
+  <summary>Browse and edit your contacts</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>Apache-2.0</project_license>
+  <launchable type="desktop-id">io.busystack.busycards.desktop</launchable>
+  <developer id="io.busystack"><name>BusyStack</name></developer>
+  <url type="homepage">https://github.com/busystack</url>
+  <description><p>A standalone Linux contacts application with Google People, Microsoft Graph and CardDAV connections, private encrypted offline storage, and vCard import and export.</p></description>
+  <provides><binary>busycards</binary><mediatype>text/vcard</mediatype></provides>
+  <content_rating type="oars-1.1"/>
+  <releases><release version="0.1.0" date="2026-10-04"/></releases>
+</component>

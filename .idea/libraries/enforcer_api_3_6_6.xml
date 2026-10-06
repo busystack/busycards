@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="enforcer-api-3.6.6">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/portable-inputs/inputs/maven-repository/org/apache/maven/enforcer/enforcer-api/3.6.3/enforcer-api-3.6.3.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

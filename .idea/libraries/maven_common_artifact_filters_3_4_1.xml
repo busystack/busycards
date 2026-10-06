@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="maven-common-artifact-filters-3.4.1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/fresh/busycards/validation/helper-maven-repository/org/apache/maven/shared/maven-common-artifact-filters/3.4.0/maven-common-artifact-filters-3.4.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

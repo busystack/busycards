@@ -1,0 +1,8 @@
+.dart_tool/
+.flutter-plugins-dependencies
+build/
+linux/flutter/ephemeral/
+native/microsoft_auth_helper/target/
+native/microsoft_auth_helper/.mvn-download/
+validation/
+tool/__pycache__/

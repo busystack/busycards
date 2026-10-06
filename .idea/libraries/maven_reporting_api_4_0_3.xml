@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="maven-reporting-api-4.0.3">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/fresh/busycards/validation/helper-maven-repository/org/apache/maven/reporting/maven-reporting-api/4.0.0/maven-reporting-api-4.0.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

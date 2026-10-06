@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="snappy-0.8">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/offline-inputs/inputs/maven-repository/org/iq80/snappy/snappy/0.4/snappy-0.4.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

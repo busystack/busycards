@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="surefire-junit-platform-3.6.4">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/portable-inputs/inputs/maven-repository/org/apache/maven/surefire/surefire-junit-platform/3.6.0/surefire-junit-platform-3.6.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

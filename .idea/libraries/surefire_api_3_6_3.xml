@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="surefire-api-3.6.3">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/offline-inputs/inputs/maven-repository/org/apache/maven/surefire/surefire-api/3.6.0/surefire-api-3.6.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

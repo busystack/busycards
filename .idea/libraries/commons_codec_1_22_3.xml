@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="commons-codec-1.22.3">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/helper-maven-repository/commons-codec/commons-codec/1.22.0/commons-codec-1.22.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

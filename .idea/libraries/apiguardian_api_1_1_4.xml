@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="apiguardian-api-1.1.4">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/fresh-extraction/portable/inputs/maven-repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

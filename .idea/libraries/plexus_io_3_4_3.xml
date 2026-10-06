@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="plexus-io-3.4.3">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/helper-maven-repository/org/codehaus/plexus/plexus-io/3.4.2/plexus-io-3.4.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

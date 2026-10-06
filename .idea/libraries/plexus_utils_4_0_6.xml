@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="plexus-utils-4.0.6">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/fresh-extraction/portable/inputs/maven-repository/org/codehaus/plexus/plexus-utils/4.0.3/plexus-utils-4.0.3.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

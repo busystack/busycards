@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="asm-tree-9.9.5">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/fresh/busycards/validation/helper-maven-repository/org/ow2/asm/asm-tree/9.9.1/asm-tree-9.9.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

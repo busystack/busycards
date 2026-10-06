@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="enforcer-rules-3.6.7">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/fresh/busycards/validation/helper-maven-repository/org/apache/maven/enforcer/enforcer-rules/3.6.3/enforcer-rules-3.6.3.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

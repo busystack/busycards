@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="maven-surefire-common-3.6.4">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/portable-inputs/inputs/maven-repository/org/apache/maven/surefire/maven-surefire-common/3.6.0/maven-surefire-common-3.6.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

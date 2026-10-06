@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="javaparser-core-3.28.4">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/portable-inputs/inputs/maven-repository/com/github/javaparser/javaparser-core/3.28.2/javaparser-core-3.28.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

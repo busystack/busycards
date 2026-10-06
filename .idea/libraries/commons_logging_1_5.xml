@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="commons-logging-1.5">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/offline-inputs/inputs/maven-repository/commons-logging/commons-logging/1.2/commons-logging-1.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

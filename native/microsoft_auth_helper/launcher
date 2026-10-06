@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+set -eu
+helper_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+# exec makes the JVM the bridge-owned process. No wrapper child survives kill.
+# Runtime diagnostics are suppressed; stdout is exclusively protocol framing.
+exec "$helper_dir/microsoft-auth/runtime/bin/java" \
+  --enable-native-access=ALL-UNNAMED -XX:-CreateCoredumpOnCrash \
+  -XX:ErrorFile=/dev/null -cp "$helper_dir/microsoft-auth/jars/*" \
+  io.busystack.busycards.auth.Main 2>/dev/null

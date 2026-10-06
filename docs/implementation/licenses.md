@@ -1,0 +1,11 @@
+# Licenses and attribution
+
+The four new targets use Apache-2.0, with the full license and BusyStack attribution in each LICENSE/NOTICE. Adapted BusyMax presentation/native/protocol, BusyBox Graph/authentication and BusyFiles transport/parser/Login Flow code is identified by revision and symbol in [donor-map.md](donor-map.md). The donors remain in place. No donor credential, registration, cache, database or installed helper is shipped.
+
+BusyCards’ new SVG adapts the approved suite logo convention and adds a contacts badge. It is a derived asset made for this implementation; it is not represented as a pre-existing BusyCards icon. Attribution follows the donor Apache-2.0 license. AppStream metadata declares CC0-1.0; application source is Apache-2.0.
+
+The app-local adapted yaru_window 0.2.2 source retains its MPL-2.0 LICENSE and notices in third_party/yaru_window. Its native initialization adjustment follows the single direct FlView BusyMax host. All source is available in the source bundle; no shared UI package was added. Yaru 10.2.0 retains its MPL-2.0 package license and CC-BY-SA asset notices. The independent license inventory, with SHA-256 values, is third_party/licenses/manifest.json. These files are installed into the relocatable release’s share/licenses/busycards/dependencies. Flutter-generated NOTICES.Z is shipped in data/flutter_assets.
+
+The Java helper ships explicit dependency notices/licenses under microsoft-auth/licenses, dependency coordinates and verified jar checksums. Its owned Temurin Java 25.0.1 runtime includes the jlink legal directory (OpenJDK GPLv2 with Classpath Exception and third-party notices). MSAL4J and Azure JSON are MIT; Nimbus is Apache-2.0; JNA is LGPL-2.1-or-later or Apache-2.0; SLF4J is MIT. The dependency input archive retains Maven POM/jar metadata and licenses.
+
+SQLCipher 4.19.0’s BSD-3-Clause community license and the statically linked OpenSSL 3.6.4 Apache-2.0 license and sqlite3 Dart package notices are included with the dependency inventory. The Linux native artifact is the sqlite3 3.6.0 maintainer-provided SQLCipher binary, not an altered system SQLite build. GTK, libhandy and libsecret remain system dependencies and are not copied into the application bundle. Licenses are preserved, not replaced by this summary. Nothing was published or installed over an owner application.

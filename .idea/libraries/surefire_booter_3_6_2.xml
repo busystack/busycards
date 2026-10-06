@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="surefire-booter-3.6.2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/offline-inputs/inputs/maven-repository/org/apache/maven/surefire/surefire-booter/3.6.0/surefire-booter-3.6.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

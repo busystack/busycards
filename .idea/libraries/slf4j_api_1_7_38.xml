@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="slf4j-api-1.7.38">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/fresh/busycards/validation/helper-maven-repository/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

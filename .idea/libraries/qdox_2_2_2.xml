@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="qdox-2.2.2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/fresh-extraction/portable/inputs/maven-repository/com/thoughtworks/qdox/qdox/2.2.0/qdox-2.2.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

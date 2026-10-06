@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="jrt-fs3">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/native/microsoft_auth_helper/target/runtime-previous-1791141193922072287/lib/jrt-fs.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

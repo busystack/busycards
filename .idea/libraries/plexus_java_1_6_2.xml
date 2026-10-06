@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="plexus-java-1.6.2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/helper-maven-repository/org/codehaus/plexus/plexus-java/1.6.0/plexus-java-1.6.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

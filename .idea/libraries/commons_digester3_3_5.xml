@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="commons-digester3-3.5">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/correction/fresh/busycards/validation/helper-maven-repository/org/apache/commons/commons-digester3/3.2/commons-digester3-3.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

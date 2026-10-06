@@ -1,0 +1,797 @@
+[
+  {
+    "dependency": "_discoveryapis_commons-1.0.8",
+    "file": "_discoveryapis_commons-1.0.8/LICENSE",
+    "sha256": "ff15faa32a2e638107b7789592b14426162a75ba620044ee2340a20ec6ce5e73"
+  },
+  {
+    "dependency": "_fe_analyzer_shared-103.0.0",
+    "file": "_fe_analyzer_shared-103.0.0/LICENSE",
+    "sha256": "efa31b5ac790016736fa9761642b0af16d37cd4fb483de2905adb5258cb89722"
+  },
+  {
+    "dependency": "analyzer-13.3.0",
+    "file": "analyzer-13.3.0/LICENSE",
+    "sha256": "7e124af6a556f045cb3a20cafbdaa31602ac2c82cbcb3c3b15faaaf514b06028"
+  },
+  {
+    "dependency": "animated_vector-0.2.2",
+    "file": "animated_vector-0.2.2/LICENSE",
+    "sha256": "85274b98938da3f9de3ca722ed3c1d1e452612c13f5bb41b88c1e55cfa0ce103"
+  },
+  {
+    "dependency": "animated_vector_annotations-0.2.2",
+    "file": "animated_vector_annotations-0.2.2/LICENSE",
+    "sha256": "85274b98938da3f9de3ca722ed3c1d1e452612c13f5bb41b88c1e55cfa0ce103"
+  },
+  {
+    "dependency": "archive-4.3.0",
+    "file": "archive-4.3.0/LICENSE",
+    "sha256": "32f97d332eae7453ec4079858e6f1d74be85beeb6d3881068b47d02a379cccea"
+  },
+  {
+    "dependency": "archive-4.3.0",
+    "file": "archive-4.3.0/LICENSE-other.md",
+    "sha256": "ebe5a199af245d7e3e761673fbf3db341427060407e50713861ab24bb2cb1552"
+  },
+  {
+    "dependency": "args-2.7.0",
+    "file": "args-2.7.0/LICENSE",
+    "sha256": "dfb09c74e29386cd3e2719f32d4995d59526179753931d31840757c77fbf2791"
+  },
+  {
+    "dependency": "asn1lib-1.6.5",
+    "file": "asn1lib-1.6.5/LICENSE",
+    "sha256": "b0db8d3a93ea33f852d2b6dfa9c38fc57d33a51c31b47ca528df6d02700f2a42"
+  },
+  {
+    "dependency": "assorted_layout_widgets-11.0.0",
+    "file": "assorted_layout_widgets-11.0.0/LICENSE",
+    "sha256": "d30189f2f4fde9d7c26d2e3985490ec65ba50f80138bb7988efc2136c96cc704"
+  },
+  {
+    "dependency": "async-2.13.1",
+    "file": "async-2.13.1/LICENSE",
+    "sha256": "ff15faa32a2e638107b7789592b14426162a75ba620044ee2340a20ec6ce5e73"
+  },
+  {
+    "dependency": "boolean_selector-2.1.2",
+    "file": "boolean_selector-2.1.2/LICENSE",
+    "sha256": "b71519245009a3b8f126196a5408ec031e216e8e0d985085958c6543f82a8a2a"
+  },
+  {
+    "dependency": "characters-1.4.1",
+    "file": "characters-1.4.1/LICENSE",
+    "sha256": "0371d1da6a57fb791db29d29b95333429205f51f3cb2eb3a0c12d91838a38744"
+  },
+  {
+    "dependency": "characters-1.4.1",
+    "file": "characters-1.4.1/third_party/Wikipedia/License CC BY-SA 3.0.txt",
+    "sha256": "b200d4db21b09e5b006f201c6e1069ce70134c1f21e05b8e975b44fd53612ba6"
+  },
+  {
+    "dependency": "cli_config-0.2.0",
+    "file": "cli_config-0.2.0/LICENSE",
+    "sha256": "605bcf409f2347e3bcc9905ab70a2f3218e841bae372b0cbfbf305a222f74222"
+  },
+  {
+    "dependency": "clock-1.1.3",
+    "file": "clock-1.1.3/LICENSE",
+    "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
+  },
+  {
+    "dependency": "code_assets-2.1.0",
+    "file": "code_assets-2.1.0/LICENSE",
+    "sha256": "21ae23b0b9ff67a2dc75ab085d1e8db8ac548c5faf370af17f28dd2ef3b52b7b"
+  },
+  {
+    "dependency": "collection-1.19.1",
+    "file": "collection-1.19.1/LICENSE",
+    "sha256": "ff15faa32a2e638107b7789592b14426162a75ba620044ee2340a20ec6ce5e73"
+  },
+  {
+    "dependency": "convert-3.1.2",
+    "file": "convert-3.1.2/LICENSE",
+    "sha256": "ad6a71997da90924b2cfb1fb47ec46537f70faf469efe016168794ae45ed6888"
+  },
+  {
+    "dependency": "coverage-1.15.1",
+    "file": "coverage-1.15.1/LICENSE",
+    "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+  },
+  {
+    "dependency": "cross_file-0.3.5+5",
+    "file": "cross_file-0.3.5+5/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "crypto-3.0.7",
+    "file": "crypto-3.0.7/LICENSE",
+    "sha256": "ad6a71997da90924b2cfb1fb47ec46537f70faf469efe016168794ae45ed6888"
+  },
+  {
+    "dependency": "crypto_keys-0.3.1",
+    "file": "crypto_keys-0.3.1/LICENSE",
+    "sha256": "b1969bbeba97997b27fdef5776b6a6d3d3c6985ddc06ef986e5a8bba1ff3fb47"
+  },
+  {
+    "dependency": "dbus-0.7.15",
+    "file": "dbus-0.7.15/LICENSE",
+    "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5"
+  },
+  {
+    "dependency": "diacritic-0.1.6",
+    "file": "diacritic-0.1.6/LICENSE",
+    "sha256": "71163e8e32906a5b94dcb4031e31071c1d93892474e6016d6c8876672b17fd5e"
+  },
+  {
+    "dependency": "fake_async-1.3.3",
+    "file": "fake_async-1.3.3/LICENSE",
+    "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
+  },
+  {
+    "dependency": "ffi-2.2.0",
+    "file": "ffi-2.2.0/LICENSE",
+    "sha256": "0371d1da6a57fb791db29d29b95333429205f51f3cb2eb3a0c12d91838a38744"
+  },
+  {
+    "dependency": "ffi_leak_tracker-0.1.2",
+    "file": "ffi_leak_tracker-0.1.2/LICENSE",
+    "sha256": "332f290333e64ed007b4f59aeeebd8fd3ceaadfbfa226a6cf2a3ab1583281624"
+  },
+  {
+    "dependency": "file-7.0.1",
+    "file": "file-7.0.1/LICENSE",
+    "sha256": "f6df86b1412172537273e8e80ee2fb8a66aa7307ce0b39ea5ddab47ca41b8c49"
+  },
+  {
+    "dependency": "file_selector-1.1.0",
+    "file": "file_selector-1.1.0/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "file_selector_android-0.5.2+11",
+    "file": "file_selector_android-0.5.2+11/LICENSE",
+    "sha256": "8e139d4c7faa5e7a76752e743a745113f46e658071733bfae4914a04da12ae0e"
+  },
+  {
+    "dependency": "file_selector_ios-0.5.3+6",
+    "file": "file_selector_ios-0.5.3+6/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "file_selector_linux-0.9.4+1",
+    "file": "file_selector_linux-0.9.4+1/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "file_selector_macos-0.9.5+1",
+    "file": "file_selector_macos-0.9.5+1/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "file_selector_platform_interface-2.7.0",
+    "file": "file_selector_platform_interface-2.7.0/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "file_selector_web-0.9.5",
+    "file": "file_selector_web-0.9.5/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "file_selector_windows-0.9.3+6",
+    "file": "file_selector_windows-0.9.3+6/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "fixnum-1.1.1",
+    "file": "fixnum-1.1.1/LICENSE",
+    "sha256": "ff0b91d4f3c32b25cb6ec84985e8da89b0ba2a2b2f7eef353cda5e5423a20390"
+  },
+  {
+    "dependency": "flutter_lints-6.0.0",
+    "file": "flutter_lints-6.0.0/LICENSE",
+    "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9"
+  },
+  {
+    "dependency": "flutter_riverpod-3.4.3",
+    "file": "flutter_riverpod-3.4.3/LICENSE",
+    "sha256": "757d9c09a9a2a701144328c0fd596234ea287ff62952b39cd22f9ad4caed1171"
+  },
+  {
+    "dependency": "flutter_secure_storage-11.2.0",
+    "file": "flutter_secure_storage-11.2.0/LICENSE",
+    "sha256": "55dafb084270616f95b9bea53654adda8bdcad95c022a83c4cf8769073f829fa"
+  },
+  {
+    "dependency": "flutter_secure_storage_darwin-0.4.3",
+    "file": "flutter_secure_storage_darwin-0.4.3/LICENSE",
+    "sha256": "3754c516086c62307896512b68024837bee5d2bea42a55cfd03f7448b92b06c8"
+  },
+  {
+    "dependency": "flutter_secure_storage_linux-3.0.3",
+    "file": "flutter_secure_storage_linux-3.0.3/LICENSE",
+    "sha256": "55dafb084270616f95b9bea53654adda8bdcad95c022a83c4cf8769073f829fa"
+  },
+  {
+    "dependency": "flutter_secure_storage_platform_interface-2.1.1",
+    "file": "flutter_secure_storage_platform_interface-2.1.1/LICENSE",
+    "sha256": "55dafb084270616f95b9bea53654adda8bdcad95c022a83c4cf8769073f829fa"
+  },
+  {
+    "dependency": "flutter_secure_storage_web-2.1.1",
+    "file": "flutter_secure_storage_web-2.1.1/LICENSE",
+    "sha256": "55dafb084270616f95b9bea53654adda8bdcad95c022a83c4cf8769073f829fa"
+  },
+  {
+    "dependency": "flutter_secure_storage_windows-4.2.2",
+    "file": "flutter_secure_storage_windows-4.2.2/LICENSE",
+    "sha256": "55dafb084270616f95b9bea53654adda8bdcad95c022a83c4cf8769073f829fa"
+  },
+  {
+    "dependency": "frontend_server_client-4.0.0",
+    "file": "frontend_server_client-4.0.0/LICENSE",
+    "sha256": "f3fedf65adeec4d6ccb2abf053ebc0f07603d402db3d3c5651322b50502e1071"
+  },
+  {
+    "dependency": "glob-2.2.0",
+    "file": "glob-2.2.0/LICENSE",
+    "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+  },
+  {
+    "dependency": "go_router-17.5.0",
+    "file": "go_router-17.5.0/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "google_cloud-0.5.0",
+    "file": "google_cloud-0.5.0/LICENSE",
+    "sha256": "b1d2870f1a00e4d7f56576e5f0870cba109e041f8af66866cf5b499478e654e7"
+  },
+  {
+    "dependency": "google_identity_services_web-0.3.3+1",
+    "file": "google_identity_services_web-0.3.3+1/LICENSE",
+    "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9"
+  },
+  {
+    "dependency": "googleapis-17.0.0",
+    "file": "googleapis-17.0.0/LICENSE",
+    "sha256": "3bb9e03a1a57adc98b2b9330ed05209605a2c0b1bce08768ddf6e0112054afcf"
+  },
+  {
+    "dependency": "googleapis_auth-2.3.3",
+    "file": "googleapis_auth-2.3.3/LICENSE",
+    "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+  },
+  {
+    "dependency": "gsettings-0.2.8",
+    "file": "gsettings-0.2.8/LICENSE",
+    "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5"
+  },
+  {
+    "dependency": "gtk-2.2.0",
+    "file": "gtk-2.2.0/LICENSE",
+    "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5"
+  },
+  {
+    "dependency": "hooks-2.2.0",
+    "file": "hooks-2.2.0/LICENSE",
+    "sha256": "21ae23b0b9ff67a2dc75ab085d1e8db8ac548c5faf370af17f28dd2ef3b52b7b"
+  },
+  {
+    "dependency": "http-1.6.0",
+    "file": "http-1.6.0/LICENSE",
+    "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+  },
+  {
+    "dependency": "http_multi_server-3.2.2",
+    "file": "http_multi_server-3.2.2/LICENSE",
+    "sha256": "ff0b91d4f3c32b25cb6ec84985e8da89b0ba2a2b2f7eef353cda5e5423a20390"
+  },
+  {
+    "dependency": "http_parser-4.1.2",
+    "file": "http_parser-4.1.2/LICENSE",
+    "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+  },
+  {
+    "dependency": "image-4.10.1",
+    "file": "image-4.10.1/LICENSE",
+    "sha256": "f3c17da84e0780e1c334325c73098257c32221d62498ed55ef3c1361904925aa"
+  },
+  {
+    "dependency": "image-4.10.1",
+    "file": "image-4.10.1/LICENSE-other.md",
+    "sha256": "dea0e9e446e57c0987d241d5471e47e7b66796fb286706ec993c3fa6696cb08e"
+  },
+  {
+    "dependency": "intl-0.20.3",
+    "file": "intl-0.20.3/LICENSE",
+    "sha256": "7e124af6a556f045cb3a20cafbdaa31602ac2c82cbcb3c3b15faaaf514b06028"
+  },
+  {
+    "dependency": "io-1.1.0",
+    "file": "io-1.1.0/LICENSE",
+    "sha256": "ea97a7558a7bd7cee4e2355f7529e3cbebb0dcbb546ddb9a90f10c9eb6b08da5"
+  },
+  {
+    "dependency": "jni-1.1.0",
+    "file": "jni-1.1.0/LICENSE",
+    "sha256": "08a004aa8956c3cf3b24f7f69c966247233953e18e6afaa61191ea47b7eb70f6"
+  },
+  {
+    "dependency": "jni_flutter-1.0.3",
+    "file": "jni_flutter-1.0.3/LICENSE",
+    "sha256": "b1fcb475d67817411f335ac92872507011e574c4cb29cfdaaf7707b75641932c"
+  },
+  {
+    "dependency": "jni_util-1.0.0",
+    "file": "jni_util-1.0.0/LICENSE",
+    "sha256": "b1fcb475d67817411f335ac92872507011e574c4cb29cfdaaf7707b75641932c"
+  },
+  {
+    "dependency": "jose-0.3.5+2",
+    "file": "jose-0.3.5+2/LICENSE",
+    "sha256": "b1969bbeba97997b27fdef5776b6a6d3d3c6985ddc06ef986e5a8bba1ff3fb47"
+  },
+  {
+    "dependency": "leak_tracker-11.0.2",
+    "file": "leak_tracker-11.0.2/LICENSE",
+    "sha256": "08a004aa8956c3cf3b24f7f69c966247233953e18e6afaa61191ea47b7eb70f6"
+  },
+  {
+    "dependency": "leak_tracker_flutter_testing-3.0.10",
+    "file": "leak_tracker_flutter_testing-3.0.10/LICENSE",
+    "sha256": "08a004aa8956c3cf3b24f7f69c966247233953e18e6afaa61191ea47b7eb70f6"
+  },
+  {
+    "dependency": "leak_tracker_testing-3.0.2",
+    "file": "leak_tracker_testing-3.0.2/LICENSE",
+    "sha256": "08a004aa8956c3cf3b24f7f69c966247233953e18e6afaa61191ea47b7eb70f6"
+  },
+  {
+    "dependency": "lints-6.1.0",
+    "file": "lints-6.1.0/LICENSE",
+    "sha256": "421fe78c3b5df297f8b4ab2c74f2450a274ee6d245a113091f6b9f90570af193"
+  },
+  {
+    "dependency": "listen-1.0.1",
+    "file": "listen-1.0.1/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "logging-1.3.0",
+    "file": "logging-1.3.0/LICENSE",
+    "sha256": "dfb09c74e29386cd3e2719f32d4995d59526179753931d31840757c77fbf2791"
+  },
+  {
+    "dependency": "matcher-0.12.20",
+    "file": "matcher-0.12.20/LICENSE",
+    "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+  },
+  {
+    "dependency": "material_color_utilities-0.13.0",
+    "file": "material_color_utilities-0.13.0/LICENSE",
+    "sha256": "d103f246ef4c18dab8af0c1dcf6a8af884e5cff554da7261a48ac43c17d98f2e"
+  },
+  {
+    "dependency": "matrix4_transform-4.0.1",
+    "file": "matrix4_transform-4.0.1/LICENSE",
+    "sha256": "7b3a99451950bcb7873bb296abc848a8dc5a7b24a32df974843f1020c6828089"
+  },
+  {
+    "dependency": "meta-1.19.0",
+    "file": "meta-1.19.0/LICENSE",
+    "sha256": "b71519245009a3b8f126196a5408ec031e216e8e0d985085958c6543f82a8a2a"
+  },
+  {
+    "dependency": "mime-2.1.0",
+    "file": "mime-2.1.0/LICENSE",
+    "sha256": "ff15faa32a2e638107b7789592b14426162a75ba620044ee2340a20ec6ce5e73"
+  },
+  {
+    "dependency": "mime-2.1.0",
+    "file": "mime-2.1.0/third_party/httpd/LICENSE",
+    "sha256": "47b8c2b6c3309282a99d4a3001575c790fead690cc14734628c4667d2bbffc43"
+  },
+  {
+    "dependency": "mocktail-1.0.4",
+    "file": "mocktail-1.0.4/LICENSE",
+    "sha256": "0f8b07dcdaa3cf734576dbc3bbae8d9a3b98634b8cf3713405f31df0eeaafa5b"
+  },
+  {
+    "dependency": "native_toolchain_c-0.19.5",
+    "file": "native_toolchain_c-0.19.5/LICENSE",
+    "sha256": "aa81abb1ac43e40d2f5a606385edd37e974a5858d4109f7f439dd43d964487a7"
+  },
+  {
+    "dependency": "node_preamble-2.0.2",
+    "file": "node_preamble-2.0.2/LICENSE",
+    "sha256": "41997ee02074e3796e539b81b4501ed7d8bc1a620d11ef32cf56494e778461a9"
+  },
+  {
+    "dependency": "objective_c-9.6.2",
+    "file": "objective_c-9.6.2/LICENSE",
+    "sha256": "1cda25a8de6880c5338de0b4a06ee89e8537c213eb1379c16a4c035bfd198b5c"
+  },
+  {
+    "dependency": "package_config-2.2.0",
+    "file": "package_config-2.2.0/LICENSE",
+    "sha256": "0371d1da6a57fb791db29d29b95333429205f51f3cb2eb3a0c12d91838a38744"
+  },
+  {
+    "dependency": "package_config-3.0.0",
+    "file": "package_config-3.0.0/LICENSE",
+    "sha256": "0371d1da6a57fb791db29d29b95333429205f51f3cb2eb3a0c12d91838a38744"
+  },
+  {
+    "dependency": "path-1.9.1",
+    "file": "path-1.9.1/LICENSE",
+    "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+  },
+  {
+    "dependency": "path_parsing-1.1.0",
+    "file": "path_parsing-1.1.0/LICENSE",
+    "sha256": "f4fc0fe1e273823b06540b3b948640ff81f3a5c5dc7088972eef662fe450ad77"
+  },
+  {
+    "dependency": "path_provider-2.1.6",
+    "file": "path_provider-2.1.6/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "path_provider_android-2.3.1",
+    "file": "path_provider_android-2.3.1/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "path_provider_foundation-2.6.0",
+    "file": "path_provider_foundation-2.6.0/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "path_provider_linux-2.2.2",
+    "file": "path_provider_linux-2.2.2/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "path_provider_platform_interface-2.1.3",
+    "file": "path_provider_platform_interface-2.1.3/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "path_provider_windows-2.3.0",
+    "file": "path_provider_windows-2.3.0/LICENSE",
+    "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9"
+  },
+  {
+    "dependency": "petitparser-7.1.0",
+    "file": "petitparser-7.1.0/LICENSE",
+    "sha256": "0be767174b97278f17da4923a74169e8645631f03ea3d8482ec3523c9b1a0dd3"
+  },
+  {
+    "dependency": "platform-3.2.0",
+    "file": "platform-3.2.0/LICENSE",
+    "sha256": "143839f62c9b7f88143ea9f688361c27050888acde7696b34e04414bd254fafc"
+  },
+  {
+    "dependency": "platform_linux-0.1.2+1",
+    "file": "platform_linux-0.1.2+1/LICENSE",
+    "sha256": "fab3dd6bdab226f1c08630b1dd917e11fcb4ec5e1e020e2c16f83a0a13863e85"
+  },
+  {
+    "dependency": "plugin_platform_interface-2.1.8",
+    "file": "plugin_platform_interface-2.1.8/LICENSE",
+    "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9"
+  },
+  {
+    "dependency": "pointycastle-4.0.0",
+    "file": "pointycastle-4.0.0/LICENSE",
+    "sha256": "3a7bb295473da049a1c6edd2f8c41b9e526a4e80f200c0200cc5600b2634df3f"
+  },
+  {
+    "dependency": "pointycastle-4.0.0",
+    "file": "pointycastle-4.0.0/licenses/LICENSE-BouncyCastle.html",
+    "sha256": "157c06d78dfb0eabe54164f569bb6af94d298852198c29c6dd61fd51c98a79e6"
+  },
+  {
+    "dependency": "pointycastle-4.0.0",
+    "file": "pointycastle-4.0.0/licenses/LICENSE-scrypt.txt",
+    "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+  },
+  {
+    "dependency": "pool-1.5.3",
+    "file": "pool-1.5.3/LICENSE",
+    "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+  },
+  {
+    "dependency": "posix-6.5.2",
+    "file": "posix-6.5.2/LICENSE",
+    "sha256": "aaf6271abd048deb3125828613f1797b7556472de6c7acd7103bd43e9cb6a84b"
+  },
+  {
+    "dependency": "process-5.0.6",
+    "file": "process-5.0.6/LICENSE",
+    "sha256": "5f018bbc25a55406d7a4e1d3229135439e315210b0050ca56dbb367a4934e85d"
+  },
+  {
+    "dependency": "pub_semver-2.2.1",
+    "file": "pub_semver-2.2.1/LICENSE",
+    "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+  },
+  {
+    "dependency": "quiver-3.2.2",
+    "file": "quiver-3.2.2/LICENSE",
+    "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
+  },
+  {
+    "dependency": "quiver-3.2.2",
+    "file": "quiver-3.2.2/NOTICE",
+    "sha256": "62fc4482b330e1b29a2f095d75202962f1b03e96e88eb766427c638b0f884b5b"
+  },
+  {
+    "dependency": "record_use-1.1.1",
+    "file": "record_use-1.1.1/LICENSE",
+    "sha256": "1cda25a8de6880c5338de0b4a06ee89e8537c213eb1379c16a4c035bfd198b5c"
+  },
+  {
+    "dependency": "riverpod-3.4.3",
+    "file": "riverpod-3.4.3/LICENSE",
+    "sha256": "757d9c09a9a2a701144328c0fd596234ea287ff62952b39cd22f9ad4caed1171"
+  },
+  {
+    "dependency": "shelf-1.4.2",
+    "file": "shelf-1.4.2/LICENSE",
+    "sha256": "ff0b91d4f3c32b25cb6ec84985e8da89b0ba2a2b2f7eef353cda5e5423a20390"
+  },
+  {
+    "dependency": "shelf_packages_handler-3.0.2",
+    "file": "shelf_packages_handler-3.0.2/LICENSE",
+    "sha256": "b71519245009a3b8f126196a5408ec031e216e8e0d985085958c6543f82a8a2a"
+  },
+  {
+    "dependency": "shelf_static-1.1.3",
+    "file": "shelf_static-1.1.3/LICENSE",
+    "sha256": "ad6a71997da90924b2cfb1fb47ec46537f70faf469efe016168794ae45ed6888"
+  },
+  {
+    "dependency": "shelf_web_socket-3.0.0",
+    "file": "shelf_web_socket-3.0.0/LICENSE",
+    "sha256": "ff0b91d4f3c32b25cb6ec84985e8da89b0ba2a2b2f7eef353cda5e5423a20390"
+  },
+  {
+    "dependency": "source_map_stack_trace-2.1.2",
+    "file": "source_map_stack_trace-2.1.2/LICENSE",
+    "sha256": "ad6a71997da90924b2cfb1fb47ec46537f70faf469efe016168794ae45ed6888"
+  },
+  {
+    "dependency": "source_maps-0.10.14",
+    "file": "source_maps-0.10.14/LICENSE",
+    "sha256": "ff0b91d4f3c32b25cb6ec84985e8da89b0ba2a2b2f7eef353cda5e5423a20390"
+  },
+  {
+    "dependency": "source_span-1.10.2",
+    "file": "source_span-1.10.2/LICENSE",
+    "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+  },
+  {
+    "dependency": "sqlite3-3.6.0",
+    "file": "sqlite3-3.6.0/LICENSE",
+    "sha256": "67e5d73a3a0c6e41f33d688a672b1161bf7f16e04da9ae48a7a14f1ba7436a4d"
+  },
+  {
+    "dependency": "stack_trace-1.12.2",
+    "file": "stack_trace-1.12.2/LICENSE",
+    "sha256": "ff0b91d4f3c32b25cb6ec84985e8da89b0ba2a2b2f7eef353cda5e5423a20390"
+  },
+  {
+    "dependency": "state_notifier-1.0.0",
+    "file": "state_notifier-1.0.0/LICENSE",
+    "sha256": "757d9c09a9a2a701144328c0fd596234ea287ff62952b39cd22f9ad4caed1171"
+  },
+  {
+    "dependency": "stream_channel-2.1.4",
+    "file": "stream_channel-2.1.4/LICENSE",
+    "sha256": "ff15faa32a2e638107b7789592b14426162a75ba620044ee2340a20ec6ce5e73"
+  },
+  {
+    "dependency": "string_scanner-1.4.1",
+    "file": "string_scanner-1.4.1/LICENSE",
+    "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+  },
+  {
+    "dependency": "system_theme-3.3.0",
+    "file": "system_theme-3.3.0/LICENSE",
+    "sha256": "444a83ffa6536387cce249ec453d1e52e984105f29416d8f77324945ed4ce498"
+  },
+  {
+    "dependency": "system_theme-3.3.0",
+    "file": "system_theme-3.3.0/windows/Windows10Colors/LICENSE.txt",
+    "sha256": "58b21d77a098d85c81c1f9ca897b9fe0d3fb295ab0159edf634bf6497ae5b2cb"
+  },
+  {
+    "dependency": "system_theme_web-0.0.5",
+    "file": "system_theme_web-0.0.5/LICENSE",
+    "sha256": "444a83ffa6536387cce249ec453d1e52e984105f29416d8f77324945ed4ce498"
+  },
+  {
+    "dependency": "term_glyph-1.2.2",
+    "file": "term_glyph-1.2.2/LICENSE",
+    "sha256": "ea97a7558a7bd7cee4e2355f7529e3cbebb0dcbb546ddb9a90f10c9eb6b08da5"
+  },
+  {
+    "dependency": "test-1.31.1",
+    "file": "test-1.31.1/LICENSE",
+    "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+  },
+  {
+    "dependency": "test_api-0.7.12",
+    "file": "test_api-0.7.12/LICENSE",
+    "sha256": "ff1b9f0df9036c04be424b1e3ce12789bea880ad5ffc3a48e069ae2d40a087a4"
+  },
+  {
+    "dependency": "test_core-0.6.18",
+    "file": "test_core-0.6.18/LICENSE",
+    "sha256": "ff1b9f0df9036c04be424b1e3ce12789bea880ad5ffc3a48e069ae2d40a087a4"
+  },
+  {
+    "dependency": "typed_data-1.4.0",
+    "file": "typed_data-1.4.0/LICENSE",
+    "sha256": "ff15faa32a2e638107b7789592b14426162a75ba620044ee2340a20ec6ce5e73"
+  },
+  {
+    "dependency": "ubuntu_localizations-0.5.2+4",
+    "file": "ubuntu_localizations-0.5.2+4/LICENSE",
+    "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5"
+  },
+  {
+    "dependency": "url_launcher-6.3.2",
+    "file": "url_launcher-6.3.2/LICENSE",
+    "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9"
+  },
+  {
+    "dependency": "url_launcher_android-6.3.33",
+    "file": "url_launcher_android-6.3.33/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "url_launcher_ios-6.4.2",
+    "file": "url_launcher_ios-6.4.2/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "url_launcher_linux-3.2.3",
+    "file": "url_launcher_linux-3.2.3/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "url_launcher_macos-3.2.6",
+    "file": "url_launcher_macos-3.2.6/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "url_launcher_platform_interface-2.3.2",
+    "file": "url_launcher_platform_interface-2.3.2/LICENSE",
+    "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9"
+  },
+  {
+    "dependency": "url_launcher_web-2.4.3",
+    "file": "url_launcher_web-2.4.3/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "url_launcher_windows-3.1.6",
+    "file": "url_launcher_windows-3.1.6/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "uuid-4.5.2",
+    "file": "uuid-4.5.2/LICENSE",
+    "sha256": "ad3e5523e51004e94ba9ce728805b1b4242dbccdb65e62b523800e35a8a7cfdc"
+  },
+  {
+    "dependency": "vector_math-2.4.3",
+    "file": "vector_math-2.4.3/LICENSE",
+    "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+  },
+  {
+    "dependency": "vm_service-15.3.0",
+    "file": "vm_service-15.3.0/LICENSE",
+    "sha256": "ad6a71997da90924b2cfb1fb47ec46537f70faf469efe016168794ae45ed6888"
+  },
+  {
+    "dependency": "watcher-1.2.1",
+    "file": "watcher-1.2.1/LICENSE",
+    "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+  },
+  {
+    "dependency": "web-1.1.1",
+    "file": "web-1.1.1/LICENSE",
+    "sha256": "aa913ff50d7542eb8cc35b9f48a80928ac6819ba9057f85d424655e3e8dc271c"
+  },
+  {
+    "dependency": "web_socket-1.0.1",
+    "file": "web_socket-1.0.1/LICENSE",
+    "sha256": "cbe822ef3446af4366b2b82c48b0979d0b12865edfe74c22b9aa617fc362d6e0"
+  },
+  {
+    "dependency": "web_socket_channel-3.0.3",
+    "file": "web_socket_channel-3.0.3/LICENSE",
+    "sha256": "a4b5d7d31626e90b77e8696f1c47643aa31f52e17c1907c1ab60b068110e6e10"
+  },
+  {
+    "dependency": "webkit_inspection_protocol-1.2.1",
+    "file": "webkit_inspection_protocol-1.2.1/LICENSE",
+    "sha256": "eb9a6b9672316612439514f10b5d3b24bcd140313c96a73c370bb7b07897a8cd"
+  },
+  {
+    "dependency": "win32-6.4.0",
+    "file": "win32-6.4.0/LICENSE",
+    "sha256": "87ef8bccdd619f2345ba5b9026cf1d6cccb305e36ab83849a8a3af9293abde7e"
+  },
+  {
+    "dependency": "x509-0.2.4+3",
+    "file": "x509-0.2.4+3/LICENSE",
+    "sha256": "25190a519e6a697e2d5318aedef9a6ef442eaa41ee593375f29b518057d2fbd2"
+  },
+  {
+    "dependency": "xdg_directories-1.1.0",
+    "file": "xdg_directories-1.1.0/LICENSE",
+    "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9"
+  },
+  {
+    "dependency": "xml-7.0.1",
+    "file": "xml-7.0.1/LICENSE",
+    "sha256": "0be767174b97278f17da4923a74169e8645631f03ea3d8482ec3523c9b1a0dd3"
+  },
+  {
+    "dependency": "yaml-3.1.4",
+    "file": "yaml-3.1.4/LICENSE",
+    "sha256": "d47b93335401b052d79a2f5a3710e4cf7b5aed782faedf84d40fbdd6eb934ec7"
+  },
+  {
+    "dependency": "yaru-10.2.0",
+    "file": "yaru-10.2.0/LICENSE",
+    "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5"
+  },
+  {
+    "dependency": "yaru-10.2.0",
+    "file": "yaru-10.2.0/assets/LICENSE.CCBYSA",
+    "sha256": "7a8af68d18de818e54697230278c0ade42e6bac15d4116ef9560f74176431118"
+  },
+  {
+    "dependency": "yaru_window_linux-0.2.2",
+    "file": "yaru_window_linux-0.2.2/LICENSE",
+    "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5"
+  },
+  {
+    "dependency": "yaru_window_platform_interface-0.1.3",
+    "file": "yaru_window_platform_interface-0.1.3/LICENSE",
+    "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5"
+  },
+  {
+    "dependency": "yaru_window-0.2.2 (local MPL-2.0 adaptation)",
+    "file": "yaru_window-0.2.2/LICENSE",
+    "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5"
+  },
+  {
+    "dependency": "native SQLCipher/OpenSSL",
+    "file": "native/OpenSSL-3.6.4-Apache-2.0.txt",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  {
+    "dependency": "native SQLCipher/OpenSSL",
+    "file": "native/README.txt",
+    "sha256": "1aa7f99b0d19a24054fe5ae30198b50a29e9d749c1cbaf8974426fe95ca3490e"
+  },
+  {
+    "dependency": "native SQLCipher/OpenSSL",
+    "file": "native/SQLCipher-4.19.0-LICENSE.txt",
+    "sha256": "91ca16dfcabc614bf7dac9560b77b4af587cf650faf500e660ac397bebd4919d"
+  },
+  {
+    "dependency": "Flutter 3.47.5 SDK framework/engine",
+    "file": "flutter-3.47.5/LICENSE",
+    "sha256": "a598db94b6290ffbe10b5ecf911057b6a943351c727fdda9e5f2891d68700a20"
+  }
+]

@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="maven-compiler-plugin-3.14.4">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/portable-inputs/inputs/maven-repository/org/apache/maven/plugins/maven-compiler-plugin/3.14.1/maven-compiler-plugin-3.14.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

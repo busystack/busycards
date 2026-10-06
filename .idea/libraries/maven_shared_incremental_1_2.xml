@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="maven-shared-incremental-1.2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/validation/portable-inputs/inputs/maven-repository/org/apache/maven/shared/maven-shared-incremental/1.1/maven-shared-incremental-1.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
