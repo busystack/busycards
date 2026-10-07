@@ -70,7 +70,6 @@ def main():
         run('localization', 'busycards', [flutter, 'gen-l10n'])
         run('busycards-format', 'busycards', [dart, 'format', '--output=none', '--set-exit-if-changed', 'lib', 'test', 'tool'])
         run('busycards-analyze', 'busycards', [flutter, 'analyze', '--no-pub'])
-        run('busycards-test', 'busycards', [flutter, 'test', '--no-pub', '--reporter=expanded'])
         helper = './native/microsoft_auth_helper/mvnw'
         # Java does not use TMPDIR for Files.createTempDirectory. Forward its
         # explicit system property to Maven/Surefire, including fresh builds.
@@ -80,6 +79,9 @@ def main():
         # platform test gate is unavailable. This does not make verify pass.
         run('helper-artifact', 'busycards', [helper, *maven, '-DskipTests', 'package', 'dependency:tree', 'exec:exec@runtime-distribution'])
         run('helper-protocol', 'busycards', [dart, 'run', 'tool/helper_protocol_contract.dart', 'native/microsoft_auth_helper/target/dist/busycards-microsoft-auth'])
+        # The standard Flutter suite includes lifecycle tests against the
+        # packaged helper, so a clean extraction must build it first.
+        run('busycards-test', 'busycards', [flutter, 'test', '--no-pub', '--reporter=expanded'])
         run('store-contract', 'busycards', [dart, 'run', 'tool/store_contract.dart', '50000'])
         run('stream-contract', 'busycards', [dart, 'run', 'tool/stream_contract.dart'])
         for mode in ('debug', 'release'):
