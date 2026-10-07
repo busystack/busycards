@@ -33,6 +33,27 @@ warnings occurred because Xvfb has no user session. No screenshot utility or
 Wayland compositor is installed, so this is startup evidence, not rendered
 parity.
 
+Fresh source testing then found and corrected two packaging-only defects. The
+offline archive had still contained UUID 4.5.2, so deterministic input
+regeneration is now part of normal packaging; two consecutive generations
+produced the same archive hash. The clean-tree verifier also built the Java
+helper after a Flutter test that needs it, so helper verification/distribution
+now precedes the Flutter suite. From the corrected clean extraction, all package
+gates, 183 Flutter tests, store/stream contracts, both Linux builds, metadata
+and native tests passed. The final helper-cache command initially exceeded the
+Unix socket path limit under the deeply nested extraction; using its intended
+short disposable `/tmp` socket base passed all positive and negative keyring
+assertions. The exact final source archive was then re-extracted: gzip safety,
+18,364-input checksum import, all package gates and BusyCards enforced locked
+resolution pass.
+
+The final Linux archive has 109 distribution-manifest entries, all checksum
+verified; executable modes, helper handshake, desktop/AppStream metadata and
+dynamic-library resolution pass. Its AOT library retains one generated
+`dart_plugin_registrant.dart` diagnostic URI containing the build prefix; no
+loader or runtime resource resolves through that prefix, so no cross-prefix
+byte-identity claim is made.
+
 ## BusyBox
 
 - `flutter pub get --enforce-lockfile`: pass after intentionally resolving the
