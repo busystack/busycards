@@ -90,7 +90,10 @@ def main():
         run('desktop-metadata', 'busycards', ['desktop-file-validate', 'linux/io.busystack.busycards.desktop'])
         run('appstream-metadata', 'busycards', ['appstreamcli', 'validate', '--no-net', 'linux/io.busystack.busycards.metainfo.xml'])
         run('native-tests', 'busycards', ['dbus-run-session', '--', 'xvfb-run', '-a', 'ctest', '--test-dir', 'build/linux/x64/debug', '--output-on-failure'])
-        run('helper-cache', 'busycards', ['bash', 'native/microsoft_auth_helper/tests/run_cache_fixtures.sh', 'native/microsoft_auth_helper/target/dist/busycards-microsoft-auth'])
+        # This fixture creates D-Bus/Secret Service Unix sockets. Keep its
+        # disposable socket path below the platform limit even when the source
+        # archive is extracted under a deeply nested directory.
+        run('helper-cache', 'busycards', ['env', 'TMPDIR=/tmp', 'bash', 'native/microsoft_auth_helper/tests/run_cache_fixtures.sh', 'native/microsoft_auth_helper/target/dist/busycards-microsoft-auth'])
     return 1 if any(item['exit'] for item in results) else 0
 
 if __name__ == '__main__':
