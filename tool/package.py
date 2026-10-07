@@ -6,6 +6,8 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import subprocess
+import sys
 import tarfile
 
 APP = Path(__file__).resolve().parents[1]
@@ -60,6 +62,12 @@ def main():
     source=output/'busycards-0.1.0-source.tar.gz';archive(source,roots)
     files=[source]
     portable=output/'busycards-0.1.0-offline-inputs.tar.gz'
+    if not args.source_only:
+        subprocess.run(
+            [sys.executable, str(APP/'tool/package_offline_inputs.py')],
+            cwd=APP,
+            check=True,
+        )
     if portable.is_file(): files.append(portable)
     if not args.source_only:
         bundle=APP/'build/linux/x64/release/bundle'
