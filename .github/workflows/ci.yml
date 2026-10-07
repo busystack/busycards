@@ -1,17 +1,53 @@
-name: BusyCards Milestone 1 source-bundle validation
+name: BusyCards current source and source-bundle validation
 on:
+  push:
+    branches: [main]
+  pull_request:
   workflow_dispatch:
     inputs:
       source_bundle_url:
         description: HTTPS URL of the owner-approved four-target source bundle
-        required: true
+        required: false
       source_bundle_sha256:
         description: SHA-256 from the local artifact manifest
-        required: true
+        required: false
 permissions:
   contents: read
 jobs:
+  current-source:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Materialize pinned sibling packages
+        run: python3 tool/checkout_shared_dependencies.py
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25.0.1'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+      - name: Linux dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libhandy-1-dev libsecret-1-dev xvfb dbus-x11 gnome-keyring python3 bubblewrap
+      - name: Verify current source and its exact siblings
+        run: python3 tool/verify.py
+      - name: Build deterministic source and Linux artifacts
+        run: python3 tool/package.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: busycards-current-source-${{ github.sha }}
+          path: |
+            validation/commands/
+            validation/artifacts/
+            validation/*-contract.json
+
   verify:
+    if: ${{ inputs.source_bundle_url != '' && inputs.source_bundle_sha256 != '' }}
     runs-on: ubuntu-24.04
     steps:
       - name: Fetch and verify the four-target source layout
