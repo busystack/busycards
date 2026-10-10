@@ -11,21 +11,32 @@ import 'src/app/busycards_app.dart';
 import 'src/application/cards_runtime.dart';
 import 'src/platform/gtk_font_service.dart';
 import 'src/platform/gtk_animation_settings_service.dart';
+import 'src/platform/gtk_header_icon_service.dart';
 import 'src/storage/contacts_database.dart';
 import 'src/storage/database_key_store.dart';
 import 'src/storage/secret_value_store.dart';
 
-Future<void> main() async {
+Future<void> main() => runLinuxBusyCards();
+
+Future<void> runLinuxBusyCards({
+  Future<CardsRuntime> Function()? openRuntime,
+}) async {
   WidgetsFlutterBinding.ensureInitialized();
   await YaruWindowTitleBar.ensureInitialized();
+  final headerIcons = GtkHeaderIconService();
   final initial = await Future.wait<Object?>([
     const GtkFontService().getGtkFont(),
     const GtkThemeService().getGtkThemeColors(),
     const GtkAnimationSettingsService().getAnimationsEnabled(),
+    headerIcons.initialize(),
   ]);
   runApp(
     ProviderScope(
       overrides: [
+        gtkHeaderIconServiceProvider.overrideWith((ref) {
+          ref.onDispose(headerIcons.dispose);
+          return headerIcons;
+        }),
         initialGtkFontSettingsProvider.overrideWithValue(
           initial[0] as GtkFontSettings?,
         ),
@@ -36,7 +47,7 @@ Future<void> main() async {
           initial[2] as bool?,
         ),
       ],
-      child: LinuxBusyCardsApp(openRuntime: _openRuntime),
+      child: LinuxBusyCardsApp(openRuntime: openRuntime ?? _openRuntime),
     ),
   );
 }
