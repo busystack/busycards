@@ -5,11 +5,27 @@ import 'dart:io';
 import 'package:busystack_contacts/busystack_contacts.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+/// Retains the original transaction failure when cleanup also fails.
+final class ContactsTransactionFailure implements Exception {
+  ContactsTransactionFailure(this.cause, this.stackTrace, this.cleanupErrors);
+  final Object cause;
+  final StackTrace stackTrace;
+  final List<Object> cleanupErrors;
+  @override
+  String toString() =>
+      'Contacts transaction failed: $cause; cleanup: $cleanupErrors';
+}
+
 /// BusyCards-owned SQLCipher store. Every cursor, record, draft and mutation
 /// shares one durable transaction; no unencrypted contacts side database.
 final class ContactsDatabase implements ContactsStore {
-  ContactsDatabase._(this._database);
-  static Future<ContactsDatabase> open(File file, List<int> key) async {
+  ContactsDatabase._(this._database, this._beforeTransactionStatement);
+  static Future<ContactsDatabase> open(
+    File file,
+    List<int> key, {
+    // A narrow adapter-boundary fault hook. Opening still requires SQLCipher.
+    void Function(String statement)? beforeTransactionStatement,
+  }) async {
     if (key.length != 32)
       throw ArgumentError('A 256-bit profile key is required');
     await file.parent.create(recursive: true);
@@ -87,7 +103,7 @@ final class ContactsDatabase implements ContactsStore {
         rethrow;
       }
       if (Platform.isLinux) await Process.run('chmod', ['600', file.path]);
-      return ContactsDatabase._(database);
+      return ContactsDatabase._(database, beforeTransactionStatement);
     } catch (_) {
       database.close();
       rethrow;
@@ -95,10 +111,18 @@ final class ContactsDatabase implements ContactsStore {
   }
 
   final Database _database;
+  final void Function(String)? _beforeTransactionStatement;
   final _changes = StreamController<void>.broadcast();
   Future<void> _tail = Future<void>.value();
   Future<void>? _closeFuture;
   bool _closed = false;
+  bool _invalid = false;
+
+  void _executeTransaction(String statement) {
+    _beforeTransactionStatement?.call(statement);
+    _database.execute(statement);
+  }
+
   @override
   Stream<void> get changes => _changes.stream;
   @override
@@ -112,7 +136,7 @@ final class ContactsDatabase implements ContactsStore {
     Future<T> Function(Transaction) action,
     bool writable,
   ) {
-    if (_closeFuture != null || _closed) {
+    if (_closeFuture != null || _closed || _invalid) {
       return Future<T>.error(StateError('Contacts database closed'));
     }
     final result = Completer<T>();
@@ -124,19 +148,44 @@ final class ContactsDatabase implements ContactsStore {
     _tail = done.future;
     unawaited(
       Zone.root.run(() async {
-        await previous;
-        final tx = _Transaction(_database, writable);
-        _database.execute(writable ? 'BEGIN IMMEDIATE' : 'BEGIN');
+        _Transaction? tx;
+        var began = false;
         try {
+          await previous;
+          if (_invalid) throw StateError('Contacts connection invalidated');
+          tx = _Transaction(_database, writable);
+          try {
+            _executeTransaction(writable ? 'BEGIN IMMEDIATE' : 'BEGIN');
+            began = true;
+          } catch (_) {
+            // A failed BEGIN cannot establish the connection's transaction
+            // state. Queued work must fail explicitly until a fresh open.
+            _invalid = true;
+            rethrow;
+          }
           final value = await action(tx as Transaction);
-          _database.execute('COMMIT');
-          if (writable) _changes.add(null);
+          _executeTransaction('COMMIT');
+          began = false;
+          if (writable && _closeFuture == null) _changes.add(null);
           result.complete(value);
         } catch (error, stackTrace) {
-          _database.execute('ROLLBACK');
-          result.completeError(error, stackTrace);
+          final cleanupErrors = <Object>[];
+          if (began) {
+            try {
+              _executeTransaction('ROLLBACK');
+            } catch (cleanup) {
+              _invalid = true;
+              cleanupErrors.add(cleanup);
+            }
+          }
+          result.completeError(
+            cleanupErrors.isEmpty
+                ? error
+                : ContactsTransactionFailure(error, stackTrace, cleanupErrors),
+            stackTrace,
+          );
         } finally {
-          tx.active = false;
+          tx?.active = false;
           done.complete();
         }
       }),
@@ -156,9 +205,41 @@ final class ContactsDatabase implements ContactsStore {
   Future<void> _close() async {
     await _tail;
     _closed = true;
-    _database.execute('PRAGMA wal_checkpoint(TRUNCATE)');
-    _database.close();
-    await _changes.close();
+    Object? failure;
+    StackTrace? trace;
+    final cleanupErrors = <Object>[];
+    void record(Object error, StackTrace stack) {
+      if (failure == null) {
+        failure = error;
+        trace = stack;
+      } else {
+        cleanupErrors.add(error);
+      }
+    }
+
+    try {
+      if (!_invalid) _database.execute('PRAGMA wal_checkpoint(TRUNCATE)');
+    } catch (error, stack) {
+      record(error, stack);
+    }
+    try {
+      _database.close();
+    } catch (error, stack) {
+      record(error, stack);
+    }
+    try {
+      await _changes.close();
+    } catch (error, stack) {
+      record(error, stack);
+    }
+    if (failure != null) {
+      Error.throwWithStackTrace(
+        cleanupErrors.isEmpty
+            ? failure!
+            : ContactsTransactionFailure(failure!, trace!, cleanupErrors),
+        trace!,
+      );
+    }
   }
 }
 
