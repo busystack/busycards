@@ -605,6 +605,7 @@ final class CardsRuntime {
               httpClient: httpClientFactory?.call(),
             ),
           ),
+          accountGeneration: account.generation,
         );
       case ContactProviderKind.microsoft:
         final registration = CardsRegistration.fromJson(
@@ -637,11 +638,12 @@ final class CardsRuntime {
             personalAccount:
                 config['tenant'] == '9188040d-6c67-4c5b-b112-36a304b66dad',
           ),
+          accountGeneration: account.generation,
         );
       case ContactProviderKind.carddav:
         final provider = _dav(account, config);
         _carddav[account.id] = provider;
-        directory.bind(provider);
+        directory.bind(provider, accountGeneration: account.generation);
     }
   }
 
