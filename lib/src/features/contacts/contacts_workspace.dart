@@ -1019,8 +1019,9 @@ class _ContactsWorkspaceState extends State<ContactsWorkspace> {
         prototypeItem: _MeasuredContactRow(
           onExtent: (extent) => _rowExtent = extent,
           child: BusyCardsActionRow(
+            titleWidget: _ContactListText(' '),
+            subtitleWidget: _ContactListText(' '),
             title: ' ',
-            subtitle: ' ',
             leading: _selection
                 ? Checkbox(value: false, onChanged: (_) {})
                 : const Icon(YaruIcons.user),
@@ -1037,14 +1038,18 @@ class _ContactsWorkspaceState extends State<ContactsWorkspace> {
             );
           final selected = _selected.contains(projection.identity);
           return BusyCardsActionRow(
-            title: projection.displayName.isEmpty
-                ? 'Unnamed contact'
-                : projection.displayName,
-            subtitle:
-                projection.emails.firstOrNull?.value ??
-                (projection.organization.name.isEmpty
-                    ? ' '
-                    : projection.organization.name),
+            title: projection.displayName,
+            titleWidget: _ContactListText(
+              projection.displayName.isEmpty
+                  ? 'Unnamed contact'
+                  : projection.displayName,
+            ),
+            subtitleWidget: _ContactListText(
+              projection.emails.firstOrNull?.value ??
+                  (projection.organization.name.isEmpty
+                      ? ' '
+                      : projection.organization.name),
+            ),
             leading: _selection
                 ? Checkbox(
                     value: selected,
@@ -1076,6 +1081,25 @@ class _ContactsWorkspaceState extends State<ContactsWorkspace> {
     _fileOpen.setMethodCallHandler(null);
     super.dispose();
   }
+}
+
+// The virtual list's prototype and visible rows must use the same line
+// metrics. Fallback glyph fonts can otherwise exceed the blank prototype by
+// a pixel, even when the GTK font and text scale are unchanged.
+class _ContactListText extends StatelessWidget {
+  const _ContactListText(this.value);
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    value,
+    maxLines: 1,
+    overflow: TextOverflow.ellipsis,
+    strutStyle: StrutStyle.fromTextStyle(
+      DefaultTextStyle.of(context).style,
+      forceStrutHeight: true,
+    ),
+  );
 }
 
 class ContactDetails extends StatefulWidget {
