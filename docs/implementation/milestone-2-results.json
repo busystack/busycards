@@ -1,0 +1,409 @@
+{
+  "schema": 1,
+  "date": "2026-10-10",
+  "status": "B1–B12 implemented and locally verified; explicitly open platform/live/rendered/store-review gates",
+  "tested_implementation_revisions": {
+    "busybox": "38ed8fed455ad1a537b3bbefd21bf7bec2376774",
+    "busymax": "19c6cf3e753f590ec73510988a23b4c4b81f74ec",
+    "busyfiles": "14c2853cc089345d2b1ed053fc0d34b1a7477110",
+    "busycards": "6518526cb624a859f126f85a0ccf3e020a265190",
+    "busystack_contacts": "cf399b9af0b7bf8a315e8c5d6123e601c90b7bd2",
+    "busystack_dav": "18f636f3227e3df8c1406bafd85b45e7f12cf8bd",
+    "busystack_graph": "6572ee14ae992d4cd4f8c2218babaff5051bc132"
+  },
+  "full_suite_counts": {
+    "busybox": {
+      "passed": 1184,
+      "existing_skipped": 3
+    },
+    "busymax": {
+      "passed": 3512,
+      "existing_skipped": 10
+    },
+    "busyfiles": {
+      "passed": 1790,
+      "existing_skipped": 26
+    },
+    "busycards": {
+      "passed": 188,
+      "existing_skipped": 0
+    },
+    "busystack_contacts": {
+      "passed": 99,
+      "existing_skipped": 0
+    },
+    "busystack_dav": {
+      "passed": 74,
+      "existing_skipped": 0
+    },
+    "busystack_graph": {
+      "passed": 51,
+      "existing_skipped": 0
+    }
+  },
+  "corrections": [
+    {
+      "item": "B1",
+      "root_cause_and_changed_boundary": "`ContactsDatabase._enqueue` began SQL transactions outside its completion handling; rollback could replace the primary error. The whole lifecycle now settles the operation and gate in `finally`, tracks successful BEGIN, preserves cleanup diagnostics and invalidates an unrecoverable connection. `_close` independently drains resources.",
+      "regression_and_actual_outcome": "Actual SQLCipher adapter BEGIN/body/COMMIT/ROLLBACK injection, bounded operation/shutdown and subsequent-operation assertions in `test/storage/transaction_failure_test.dart`; encrypted restart, awaited isolation and rollback retained. Pass.",
+      "status": "implemented; deterministic production-boundary regressions passed"
+    },
+    {
+      "item": "B2",
+      "root_cause_and_changed_boundary": "BusyMax reauthorization persisted an enabled replacement then disabled it through `disconnect`. `enableLinkedContacts`, staged authorization and `ContactsDirectory.detach` now preserve the working connection through consent, commit validated replacement scopes/generation, drain the old binding without disabling the replacement, and bind its generation.",
+      "regression_and_actual_outcome": "Actual store/controller Google and Microsoft first enable, upgrade/reconnect, cancellation/wrong identity/partial grant/persistence failure, restart and sync in `test/contacts/contacts_enrollment_test.dart`. Pass.",
+      "status": "implemented; deterministic production-boundary regressions passed"
+    },
+    {
+      "item": "B3",
+      "root_cause_and_changed_boundary": "BusyMax source preferences committed without publishing configuration changes; Settings detached writes. Both store operations and post-commit notifications now have a close boundary; Settings controls pending/error state and versions reloads.",
+      "regression_and_actual_outcome": "Actual Settings switches, failed persistence rollback, immediate state, source eligibility and durable restart fixtures; no unrelated sync needed. Pass.",
+      "status": "implemented; deterministic production-boundary regressions passed"
+    },
+    {
+      "item": "B4",
+      "root_cause_and_changed_boundary": "The actual Fluent Windows and Android Settings routes had no enrollment actions. Their native contacts panels now call the existing controller for linked Google/Microsoft read/write, reconnect/disable/remove/source selection and independent CardDAV/Nextcloud read/write setup.",
+      "regression_and_actual_outcome": "Eight route-level backend/platform fixtures starting with no contacts; cancellation, enrollment, source selection, read-only state, write upgrade and removal. Pass. Native host results are separate below.",
+      "status": "implemented; deterministic production-boundary regressions passed"
+    },
+    {
+      "item": "B5",
+      "root_cause_and_changed_boundary": "Attendee requests only fenced query text. All three production attendee controls now capture/revalidate query, selected account and eligible sources, subscribe to configuration changes and invalidate on selection/add/removal/disposal without deleting draft attendees.",
+      "regression_and_actual_outcome": "Twenty-one actual Linux/Fluent/Android controls fixtures for visible/delayed A→B, selection, source disable/removal and disposal; original manual-entry/metadata/permission preservation suites retained. Pass.",
+      "status": "implemented; deterministic production-boundary regressions passed"
+    },
+    {
+      "item": "B6",
+      "root_cause_and_changed_boundary": "`GraphClient.download` omitted ordinary confirmed-401 recovery used by `request`. Streaming now permits one ordinary recovery and one claims replay before payload, bounded across alternating rejection types. Cancellation, range/headers/account authorization and no replay after payload remain.",
+      "regression_and_actual_outcome": "Seven direct streaming regressions; actual BusyMax calendar/To Do attachment caller fixtures; BusyBox integrated Graph mail/download/upload/security coverage in its complete final suite. Pass.",
+      "status": "implemented; deterministic production-boundary regressions passed"
+    },
+    {
+      "item": "B7",
+      "root_cause_and_changed_boundary": "BusyMax detached sync failures were recorded but remained unobserved futures; cleanup could stop at a failed operation. `_launch`, per-account status generation and enrollment/sync ownership observe scheduled errors and drain on close, preserving awaitable manual failures.",
+      "regression_and_actual_outcome": "Actual caller-zone scheduled offline/revoked failure, another successful account, manual error, removal/cancellation and shutdown fixtures. No uncaught scheduled error. Pass.",
+      "status": "implemented; deterministic production-boundary regressions passed"
+    },
+    {
+      "item": "B8",
+      "root_cause_and_changed_boundary": "BusyBox reconstructed full replacement fields from one email/display name. `ContactBrowserDialog` builds patches from the full selected record and actual edits, preserves other values/native metadata and structured names, supports intentional clear, explicit new destination, read-only gates and dirty navigation. Save captures identity/destination/edit generation and mounted state.",
+      "regression_and_actual_outcome": "Actual dialog/controller/shared Google/Microsoft/CardDAV serialized requests and durable results, repeated emails/labels/IDs/unknown parameters, unchanged Save, name/email-only edits, clear, dirty cancel/switch and close/selection during Save. Google structured-name input edits `givenName`, since `displayName` is output-only. Pass.",
+      "status": "implemented; deterministic production-boundary regressions passed"
+    },
+    {
+      "item": "B9",
+      "root_cause_and_changed_boundary": "BusyBox treated every returned mutation as success and could create a fresh logical mutation after an unknown create. The editor captures `onStaged` journal ID before dispatch; only confirmed state is saved. Failed/conflict/unknown drafts persist and reopen, known retry uses its ID and uncertain writes reconcile before replay.",
+      "regression_and_actual_outcome": "Returned validation/permission failure, retryable failure, conflict, timeout-after-dispatch, restart, repeated Save dispatch count and account disable/removal recovery tests. No new create while its logical create is unresolved. Pass. No exactly-once guarantee is claimed.",
+      "status": "implemented; deterministic production-boundary regressions passed"
+    },
+    {
+      "item": "B10",
+      "root_cause_and_changed_boundary": "Independent DAV sources had no production mail association, editing-mode action or eligibility invalidation. Native Settings exposes separate association, suggestion preference and read/write mode, reconnect and lifecycle actions. Independent links unlink on parent removal; dependent OAuth accounts follow authorization ownership.",
+      "regression_and_actual_outcome": "Actual Settings→CardDAV/Nextcloud discovery→scoped real composer suggestions, restart, read-only/write, reconnect/association/removal, preference failure, out-of-order loads and stale visible/delayed suggestions. Native shell workflow also exercised. Pass.",
+      "status": "implemented; deterministic production-boundary regressions passed"
+    },
+    {
+      "item": "B11",
+      "root_cause_and_changed_boundary": "Enrollment lived outside account transition ownership; Google commit/restore minted fresh authority for stale staged results. `ContactsEnrollmentAuthority`, owned enrollment resources and staged original credential authority now fence identity/registration/tenant/generation throughout consent/commit/conditional rollback. Microsoft retains Java/MSAL and protected conditional cache stages. DAV partial durable commits retain recoverable credentials/state.",
+      "regression_and_actual_outcome": "Real AccountManager/controller/store OAuth loopback/RSA fixtures and framed helper contract cover enable/upgrade/reconnect, cancellation/wrong/partial grant/store failure, removal after authorization, rollback versus newer credentials/removal, old refresh, close and DAV partial failures/restart. Java/helper and positive isolated Secret Service/cache fixtures pass. SQLite and Secret Service remain separate stores with staged recovery, not a claimed atomic transaction.",
+      "status": "implemented; deterministic production-boundary regressions passed"
+    },
+    {
+      "item": "B12",
+      "root_cause_and_changed_boundary": "BusyBox scheduled/discovery failures lacked an explicit observer/status; store close could skip stream cleanup after failed `Future.wait`, with untracked link/preference writes. Controller owns enrollment and sync; every public store operation is tracked, rejects after closing starts, notifies only after durable success while open, and cleanup proceeds after failures. BusyMax uses the equivalent boundary.",
+      "regression_and_actual_outcome": "Actual caller-zone controller failures, one failure plus one success, manual errors, failing transaction/link save close, writes-after-close, idempotent close and shared mail DB usability; source Settings errors/versioned reloads. Additive schema 10 preserves schema-8 upgrade and existing schema-9 mail/contact data. Pass.",
+      "status": "implemented; deterministic production-boundary regressions passed"
+    }
+  ],
+  "final_gates": [
+    {
+      "fingerprint_algorithm": "sha256 sorted unique Git tracked and unignored paths plus file bytes v2",
+      "label": "box-complete-final-snap-correction-tree",
+      "command": [
+        "flutter",
+        "test",
+        "--no-pub",
+        "--reporter=expanded"
+      ],
+      "cwd": "/home/albert/busystack/busybox",
+      "head": "38ed8fed455ad1a537b3bbefd21bf7bec2376774",
+      "tracked_fingerprint": "b4fa79bb690cd3d2e2817b7931808c140c6b4e9153150f56a60d3aec52f9ce07",
+      "end_fingerprint": "b4fa79bb690cd3d2e2817b7931808c140c6b4e9153150f56a60d3aec52f9ce07",
+      "stable_tree": true,
+      "started_utc": "2026-10-10T18:10:41.024362+00:00",
+      "elapsed_seconds": 481.909684,
+      "exit_status": 0,
+      "log": "logs/box-complete-final-snap-correction-tree.log",
+      "log_sha256": "12a55266b4fc6ca0fceb8c4dd800ab1011e19374fa7fd9454c3535ea5c67b185",
+      "toolchain": "Flutter 3.47.5 / Dart 3.13.4 / Java 25.0.1; private SDK copy and cache"
+    },
+    {
+      "fingerprint_algorithm": "sha256 sorted unique Git tracked and unignored paths plus file bytes v2",
+      "label": "max-complete-source-final-tree",
+      "command": [
+        "flutter",
+        "test",
+        "--reporter=expanded"
+      ],
+      "cwd": "/home/albert/busystack/busymax",
+      "head": "19c6cf3e753f590ec73510988a23b4c4b81f74ec",
+      "tracked_fingerprint": "7eae9fae2559ebcc363dd4897712c5239ab368af203f8911a237cbaf3f92729d",
+      "end_fingerprint": "7eae9fae2559ebcc363dd4897712c5239ab368af203f8911a237cbaf3f92729d",
+      "stable_tree": true,
+      "started_utc": "2026-10-10T16:49:28.162311+00:00",
+      "elapsed_seconds": 892.81815,
+      "exit_status": 0,
+      "log": "logs/max-complete-source-final-tree.log",
+      "log_sha256": "5a965158b7706a075a1213e0e57d8582d181e08fb1c659376a83fe0358417bf0",
+      "toolchain": "Flutter 3.47.5 / Dart 3.13.4 / Java 25.0.1; private SDK copy and cache"
+    },
+    {
+      "fingerprint_algorithm": "sha256 sorted unique Git tracked and unignored paths plus file bytes v2",
+      "label": "cards-four-target-row-final",
+      "command": [
+        "python3",
+        "tool/verify.py",
+        "--offline",
+        "--flutter",
+        "/tmp/m2-correction-flutter-sdk/bin/flutter",
+        "--output-dir",
+        "validation/corrective-row-final"
+      ],
+      "cwd": "/home/albert/busystack/busycards",
+      "head": "c1de4ebe8ae300785f45bd401dc88eb9485abe9c",
+      "tracked_fingerprint": "2ff19e84e85b1488e1746b6404e9db72ccd576721694f8ffff6fe8e8db397590",
+      "end_fingerprint": "2ff19e84e85b1488e1746b6404e9db72ccd576721694f8ffff6fe8e8db397590",
+      "stable_tree": true,
+      "started_utc": "2026-10-10T15:31:45.604342+00:00",
+      "elapsed_seconds": 288.54938,
+      "exit_status": 0,
+      "log": "logs/cards-four-target-row-final.log",
+      "log_sha256": "0129a0e931cedd9da0bf2a16de534e557675aca0dfaca0738ca7298b805a6db4",
+      "toolchain": "Flutter 3.47.5 / Dart 3.13.4 / Java 25.0.1; private SDK copy and cache"
+    },
+    {
+      "fingerprint_algorithm": "sha256 sorted unique Git tracked and unignored paths plus file bytes v2",
+      "label": "files-final-standard-verifier-serialized",
+      "command": [
+        "python3",
+        "-c",
+        "import os,subprocess; env=os.environ.copy(); env.update(PATH=\"/home/albert/busystack/.m2-correction/tools/bin:/var/tmp/busyfiles-release-engineering-20261005/tools:/home/albert/miniconda3/bin:/tmp/m2-correction-flutter-sdk/bin:/usr/local/bin:/usr/bin:/bin\",BUSYFILES_ENGINE_SRC_PATH=\"/var/tmp/busyfiles-engine-lifetime/flutter/engine/src\",FLUTTER_EXECUTABLE=\"/tmp/m2-correction-flutter-sdk/bin/flutter\",BUSYFILES_VERIFY_TMPDIR=\"/var/tmp/m2c-tests\",BUSYFILES_DESKTOP_SESSION_TMPDIR=\"/tmp\",BUSYFILES_NATIVE_TEST_ARTIFACTS=\"/home/albert/busystack/.m2-correction/native/files-final-serialized\",BUSYFILES_WAYLAND_TEST_ARTIFACTS=\"/home/albert/busystack/.m2-correction/native/files-final-serialized-wayland\",TMPDIR=\"/var/tmp/m2c-tests\"); raise SystemExit(subprocess.call([\"scripts/verify.sh\"],env=env,start_new_session=True))"
+      ],
+      "cwd": "/home/albert/busystack/busyfiles",
+      "head": "14c2853cc089345d2b1ed053fc0d34b1a7477110",
+      "tracked_fingerprint": "eb677206cbbd83d9b7124284fbd1550036732e1e46f6463fd888d12a73f625cb",
+      "end_fingerprint": "eb677206cbbd83d9b7124284fbd1550036732e1e46f6463fd888d12a73f625cb",
+      "stable_tree": true,
+      "started_utc": "2026-10-10T17:32:29.948621+00:00",
+      "elapsed_seconds": 2710.984444,
+      "exit_status": 0,
+      "log": "logs/files-final-standard-verifier-serialized.log",
+      "log_sha256": "6bff045b140b22c501e86634a7ab9eaa80b9a0d9b58ff1e303b4e5fa9ead5494",
+      "toolchain": "Flutter 3.47.5 / Dart 3.13.4 / Java 25.0.1; private SDK copy and cache"
+    },
+    {
+      "fingerprint_algorithm": "sha256 sorted unique Git tracked and unignored paths plus file bytes v2",
+      "label": "box-final-snap-contents-packaged-helper",
+      "command": [
+        "env",
+        "TMPDIR=/var/tmp/m2c-tests",
+        "python3",
+        "/home/albert/busystack/.m2-correction/qualify_final_snap.py"
+      ],
+      "cwd": "/home/albert/busystack/busybox",
+      "head": "38ed8fed455ad1a537b3bbefd21bf7bec2376774",
+      "tracked_fingerprint": "b4fa79bb690cd3d2e2817b7931808c140c6b4e9153150f56a60d3aec52f9ce07",
+      "end_fingerprint": "b4fa79bb690cd3d2e2817b7931808c140c6b4e9153150f56a60d3aec52f9ce07",
+      "stable_tree": true,
+      "started_utc": "2026-10-10T18:33:25.174125+00:00",
+      "elapsed_seconds": 174.953869,
+      "exit_status": 0,
+      "log": "logs/box-final-snap-contents-packaged-helper.log",
+      "log_sha256": "9438259ff5a4e864b82387d18c1b20062b8352892081816879dd129303364bab",
+      "toolchain": "Flutter 3.47.5 / Dart 3.13.4 / Java 25.0.1; private SDK copy and cache"
+    },
+    {
+      "fingerprint_algorithm": "sha256 sorted unique Git tracked and unignored paths plus file bytes v2",
+      "label": "files-final-release-disk-ready-qualification",
+      "command": [
+        "python3",
+        "/home/albert/busystack/.m2-correction/files_package_disk_ready.py"
+      ],
+      "cwd": "/home/albert/busystack/busyfiles",
+      "head": "14c2853cc089345d2b1ed053fc0d34b1a7477110",
+      "tracked_fingerprint": "eb677206cbbd83d9b7124284fbd1550036732e1e46f6463fd888d12a73f625cb",
+      "end_fingerprint": "eb677206cbbd83d9b7124284fbd1550036732e1e46f6463fd888d12a73f625cb",
+      "stable_tree": true,
+      "started_utc": "2026-10-10T18:30:42.584103+00:00",
+      "elapsed_seconds": 443.82635,
+      "exit_status": 0,
+      "log": "logs/files-final-release-disk-ready-qualification.log",
+      "log_sha256": "bd5e257a1ad90b2b1fd9b0b716c1b1331fae4966a3df8e903358137cef2e06b6",
+      "toolchain": "Flutter 3.47.5 / Dart 3.13.4 / Java 25.0.1; private SDK copy and cache"
+    },
+    {
+      "fingerprint_algorithm": "sha256 sorted unique Git tracked and unignored paths plus file bytes v2",
+      "label": "files-final-packaged-wayland-real-host-private-index",
+      "command": [
+        "python3",
+        "/home/albert/busystack/.m2-correction/files_real_host_private_accept.py"
+      ],
+      "cwd": "/home/albert/busystack/busyfiles",
+      "head": "14c2853cc089345d2b1ed053fc0d34b1a7477110",
+      "tracked_fingerprint": "eb677206cbbd83d9b7124284fbd1550036732e1e46f6463fd888d12a73f625cb",
+      "end_fingerprint": "eb677206cbbd83d9b7124284fbd1550036732e1e46f6463fd888d12a73f625cb",
+      "stable_tree": true,
+      "started_utc": "2026-10-10T18:39:44.246840+00:00",
+      "elapsed_seconds": 1506.196256,
+      "exit_status": 0,
+      "log": "logs/files-final-packaged-wayland-real-host-private-index.log",
+      "log_sha256": "63dea7bd5e15aa4c6a6be64cf429119efa13eddafb2f8461b4ed1005d2f62e2f",
+      "toolchain": "Flutter 3.47.5 / Dart 3.13.4 / Java 25.0.1; private SDK copy and cache"
+    },
+    {
+      "fingerprint_algorithm": "sha256 sorted unique Git tracked and unignored paths plus file bytes v2",
+      "label": "files-final-ubuntu26-installed-correct-archive-root",
+      "command": [
+        "python3",
+        "/home/albert/busystack/.m2-correction/files_installed_resume.py",
+        "deb"
+      ],
+      "cwd": "/home/albert/busystack/busyfiles",
+      "head": "14c2853cc089345d2b1ed053fc0d34b1a7477110",
+      "tracked_fingerprint": "eb677206cbbd83d9b7124284fbd1550036732e1e46f6463fd888d12a73f625cb",
+      "end_fingerprint": "eb677206cbbd83d9b7124284fbd1550036732e1e46f6463fd888d12a73f625cb",
+      "stable_tree": true,
+      "started_utc": "2026-10-10T18:35:42.338260+00:00",
+      "elapsed_seconds": 82.543991,
+      "exit_status": 0,
+      "log": "logs/files-final-ubuntu26-installed-correct-archive-root.log",
+      "log_sha256": "260317da1f8751479b8155fc85c47ef119cd3b9fae97be428dc8fbaaf916275e",
+      "toolchain": "Flutter 3.47.5 / Dart 3.13.4 / Java 25.0.1; private SDK copy and cache"
+    },
+    {
+      "fingerprint_algorithm": "sha256 sorted unique Git tracked and unignored paths plus file bytes v2",
+      "label": "files-final-fedora44-installed-runtime-ready",
+      "command": [
+        "python3",
+        "/home/albert/busystack/.m2-correction/files_installed_runtime_ready.py",
+        "rpm"
+      ],
+      "cwd": "/home/albert/busystack/busyfiles",
+      "head": "14c2853cc089345d2b1ed053fc0d34b1a7477110",
+      "tracked_fingerprint": "eb677206cbbd83d9b7124284fbd1550036732e1e46f6463fd888d12a73f625cb",
+      "end_fingerprint": "eb677206cbbd83d9b7124284fbd1550036732e1e46f6463fd888d12a73f625cb",
+      "stable_tree": true,
+      "started_utc": "2026-10-10T18:42:55.724420+00:00",
+      "elapsed_seconds": 19.993036,
+      "exit_status": 0,
+      "log": "logs/files-final-fedora44-installed-runtime-ready.log",
+      "log_sha256": "bcd1b8fe6c63e9f10d6556c7b62e21ee2a3e91f47abd30d9553c7f6494af2b9e",
+      "toolchain": "Flutter 3.47.5 / Dart 3.13.4 / Java 25.0.1; private SDK copy and cache"
+    },
+    {
+      "fingerprint_algorithm": "sha256 sorted unique Git tracked and unignored paths plus file bytes v2",
+      "label": "files-final-official-complete-release-gate",
+      "command": [
+        "python3",
+        "/home/albert/busystack/.m2-correction/files_final_gate.py"
+      ],
+      "cwd": "/home/albert/busystack/busyfiles",
+      "head": "14c2853cc089345d2b1ed053fc0d34b1a7477110",
+      "tracked_fingerprint": "eb677206cbbd83d9b7124284fbd1550036732e1e46f6463fd888d12a73f625cb",
+      "end_fingerprint": "eb677206cbbd83d9b7124284fbd1550036732e1e46f6463fd888d12a73f625cb",
+      "stable_tree": true,
+      "started_utc": "2026-10-10T18:59:59.462792+00:00",
+      "elapsed_seconds": 304.135159,
+      "exit_status": 0,
+      "log": "logs/files-final-official-complete-release-gate.log",
+      "log_sha256": "2bc6c6c22e5d1e286fdff279e4a60b1ce161c73f1ead1f9684d0cdda069e2050",
+      "toolchain": "Flutter 3.47.5 / Dart 3.13.4 / Java 25.0.1; private SDK copy and cache"
+    },
+    {
+      "fingerprint_algorithm": "sha256 sorted unique Git tracked and unignored paths plus file bytes v2",
+      "label": "box-current-snap-corrected-source-fresh-native",
+      "command": [
+        "python3",
+        "/home/albert/busystack/.m2-correction/fresh_box_snap_source_build.py"
+      ],
+      "cwd": "/home/albert/busystack/busybox",
+      "head": "38ed8fed455ad1a537b3bbefd21bf7bec2376774",
+      "tracked_fingerprint": "b4fa79bb690cd3d2e2817b7931808c140c6b4e9153150f56a60d3aec52f9ce07",
+      "end_fingerprint": "b4fa79bb690cd3d2e2817b7931808c140c6b4e9153150f56a60d3aec52f9ce07",
+      "stable_tree": true,
+      "started_utc": "2026-10-10T18:34:50.378331+00:00",
+      "elapsed_seconds": 115.18183,
+      "exit_status": 0,
+      "log": "logs/box-current-snap-corrected-source-fresh-native.log",
+      "log_sha256": "bd8d1664ebcddf2ceceb79f73159643d13654b245b63f11c69ef54dab4c5a343",
+      "toolchain": "Flutter 3.47.5 / Dart 3.13.4 / Java 25.0.1; private SDK copy and cache"
+    },
+    {
+      "fingerprint_algorithm": "sha256 sorted unique Git tracked and unignored paths plus file bytes v2",
+      "label": "files-final-source-fresh-exported-engine-build",
+      "command": [
+        "python3",
+        "/home/albert/busystack/.m2-correction/files_fresh_source_engine_build.py"
+      ],
+      "cwd": "/home/albert/busystack/busyfiles",
+      "head": "14c2853cc089345d2b1ed053fc0d34b1a7477110",
+      "tracked_fingerprint": "eb677206cbbd83d9b7124284fbd1550036732e1e46f6463fd888d12a73f625cb",
+      "end_fingerprint": "eb677206cbbd83d9b7124284fbd1550036732e1e46f6463fd888d12a73f625cb",
+      "stable_tree": true,
+      "started_utc": "2026-10-10T18:42:44.453038+00:00",
+      "elapsed_seconds": 1437.029244,
+      "exit_status": 0,
+      "log": "logs/files-final-source-fresh-exported-engine-build.log",
+      "log_sha256": "29db3a13cab75ab20b8a6901352e8f7360dcf522642f94976b6bb91a00582230",
+      "toolchain": "Flutter 3.47.5 / Dart 3.13.4 / Java 25.0.1; private SDK copy and cache"
+    },
+    {
+      "fingerprint_algorithm": "sha256 sorted unique Git tracked and unignored paths plus file bytes v2",
+      "label": "cards-final-implementation-fresh-source-own-helper",
+      "command": [
+        "python3",
+        "/home/albert/busystack/.m2-correction/cards_fresh_implementation_build.py"
+      ],
+      "cwd": "/home/albert/busystack/busycards",
+      "head": "6518526cb624a859f126f85a0ccf3e020a265190",
+      "tracked_fingerprint": "a02055bfd4d85c33e24490e2ba66d06ba540664d3a4a409e73383376778512d9",
+      "end_fingerprint": "a02055bfd4d85c33e24490e2ba66d06ba540664d3a4a409e73383376778512d9",
+      "stable_tree": true,
+      "started_utc": "2026-10-10T18:45:23.140765+00:00",
+      "elapsed_seconds": 1361.203529,
+      "exit_status": 0,
+      "log": "logs/cards-final-implementation-fresh-source-own-helper.log",
+      "log_sha256": "51ade8062917d552659a716eb58842a2fbe18420272af84075954b1ca6bc981f",
+      "toolchain": "Flutter 3.47.5 / Dart 3.13.4 / Java 25.0.1; private SDK copy and cache"
+    },
+    {
+      "fingerprint_algorithm": "sha256 sorted unique Git tracked and unignored paths plus file bytes v2",
+      "label": "apps-final-independent-default-native-shell-mesa-qualified",
+      "command": [
+        "python3",
+        "/home/albert/busystack/.m2-correction/independent_shell_mesa_acceptance.py"
+      ],
+      "cwd": "/home/albert/busystack/busymax",
+      "head": "19c6cf3e753f590ec73510988a23b4c4b81f74ec",
+      "tracked_fingerprint": "7eae9fae2559ebcc363dd4897712c5239ab368af203f8911a237cbaf3f92729d",
+      "end_fingerprint": "7eae9fae2559ebcc363dd4897712c5239ab368af203f8911a237cbaf3f92729d",
+      "stable_tree": true,
+      "started_utc": "2026-10-10T19:13:52.109319+00:00",
+      "elapsed_seconds": 25.780982,
+      "exit_status": 0,
+      "log": "logs/apps-final-independent-default-native-shell-mesa-qualified.log",
+      "log_sha256": "9b1ab0a804a73e700ec05adc0be05c12f2fee68817646827a4940075bb708829",
+      "toolchain": "Flutter 3.47.5 / Dart 3.13.4 / Java 25.0.1; private SDK copy and cache"
+    }
+  ],
+  "open_gates": [
+    "authorized disposable external providers/registrations absent",
+    "Windows native host absent",
+    "reference full interactive Wayland comparison and exhaustive physical/rendered matrix not verified",
+    "physical Android/production signing unverified",
+    "original reference debug native close exits139 with default and Mesa ICDs; current app Mesa pass is separate; physical/default-driver close acceptance unverified",
+    "Snap human store declaration review and strict installed confinement unverified"
+  ],
+  "report_followup": "Documentation-only following commit is recorded in accompanying final revision manifest; these are the tested implementation revisions",
+  "evidence": "m2-corrective-evidence.tar.gz; original logs and metadata, including known early progress-log gaps"
+}

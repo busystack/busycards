@@ -1,6 +1,6 @@
 # Milestone 2 integration — as-built map
 
-As built on **2026-10-06**. The applications remain independent repositories
+As built on **2026-10-10**. Historical 6 October map: [preserved copy](history/milestone-2-integration-2026-10-06.md). The applications remain independent repositories
 with app-owned databases, credentials and lifecycles. They consume the three
 ordinary Dart packages through public libraries and pinned sibling paths; no
 application depends on another application checkout or process.
@@ -12,32 +12,34 @@ application depends on another application checkout or process.
 | Awaitable contacts reads, writes and transaction callbacks | `ContactsStore`, `ContactsReadTransaction` and `ContactsWriteTransaction` in `busystack_contacts`; directory/coordinator/provider callers await every operation | contacts full suite: delayed rollback, transaction serialization, cursor/data atomicity, incomplete scans, pending edits, removal fencing and coordinator shutdown |
 | Source-qualified cached suggestions | `ContactsDirectory.suggestRecipients(accountIds, sourceKeys, excludedAddresses, limit)` applies eligibility and exclusions before limiting | multi-account/multi-source regression where the first disabled source would otherwise consume the limit |
 | Streamed DAV `SEARCH` | `DavTransferClient.openRead(method: 'SEARCH')`, with the same origin, redirect, body and response bounds as other authenticated reads | DAV protocol suite plus BusyFiles `dav_client_test.dart` file-ID and search cases |
-| Shared Graph authentication/retry provenance | `GraphClient` bounded claims replay and ordinary authentication recovery; `GraphException.retryAfterProvided` distinguishes a valid provider delay from the generic fallback | Graph package 44-test suite and both applications' production transport fixtures |
+| Shared Graph authentication/retry provenance | `GraphClient` bounded claims replay and ordinary authentication recovery; `GraphException.retryAfterProvided` distinguishes a valid provider delay from the generic fallback | Graph package 51-test suite and both applications' production transport fixtures |
 
 ## Application production paths
 
 | Application caller | Public shared API | App-owned storage/auth/lifecycle adapter | Proving application test |
 |---|---|---|---|
-| BusyCards browse, sync, edit, conflicts, drafts and shutdown through `CardsRuntime` and contacts workspace/editor | `ContactsDirectory`, asynchronous `ContactsStore`, provider public libraries | serialized SQLCipher `ContactsDatabase`; BusyCards authorization brokers and runtime ownership | full 183-test Flutter suite; runtime/workflow tests; 50,000-record encrypted store contract; stream and helper contracts |
-| BusyBox `MailboxApplication.suggestRecipients` → `ComposeDialog`/recipient field | `ContactsDirectory.suggestRecipients` | `BusyBoxContactsStore` in the existing SQLCipher mail database; `BusyBoxContactsController`; `MailRuntime` startup/removal/shutdown | `mailbox_application_shutdown_test.dart` cached correspondent/contact merge and source scope; composer/settings focused suite |
-| BusyBox Settings account actions and contact browser/editor | Google, Microsoft and CardDAV public contacts libraries | explicit linked Google/Microsoft contacts and independent CardDAV/Nextcloud accounts; source preferences; existing registration/secret stores | contacts-store, Google OAuth, Microsoft bridge/helper and settings tests |
+| BusyCards browse, sync, edit, conflicts, drafts and shutdown through `CardsRuntime` and contacts workspace/editor | `ContactsDirectory`, asynchronous `ContactsStore`, provider public libraries | serialized SQLCipher `ContactsDatabase`; BusyCards authorization brokers and runtime ownership | full 188-test Flutter suite; runtime/workflow tests; 50,000-record encrypted store contract; stream and helper contracts |
+| BusyBox `MailboxApplication.suggestRecipients` → `ComposeDialog`/recipient field | `ContactsDirectory.suggestRecipients` | `BusyBoxContactsStore` in the existing SQLCipher mail database; `BusyBoxContactsController`; `MailRuntime` startup/removal/shutdown | `mailbox_application_shutdown_test.dart` cached correspondent/contact merge and source scope; actual Settings→DAV/Nextcloud→composer route fixtures; complete final 1,184-test suite |
+| BusyBox Settings account actions and contact browser/editor | Google, Microsoft and CardDAV public contacts libraries | explicit linked Google/Microsoft contacts and independent CardDAV/Nextcloud accounts; source preferences; existing registration/secret stores | 23 actual dialog/controller/provider/store edit/recovery cases; 14 owned enrollment orchestration fixtures; positive Java/Secret Service cache gates |
 | BusyBox `GraphMailProviderAdapter` and upload-session binding through `provider/graph/graph_client.dart` | `busystack_graph.GraphClient`, `GraphUploadDestination`, streamed download/upload | thin mail error/budget/activity adapter; existing account-scoped token bridge and upload provenance | `graph_client_test.dart`, `graph_adapter_fixture_test.dart`, draft/attachment/security and sync suites |
 | BusyFiles `NextcloudHttpTransport` metadata/transfer operations | `DavHttpTransport`, `DavTransferClient` | BusyFiles cancellation, progress, provider-error and ambiguous-mutation mapping; existing origin/credential policy | complete Nextcloud provider suite, especially `http_transport_test.dart` |
 | BusyFiles `NextcloudDavClient` listing/search/file-ID recovery | streamed `DavTransferClient.openRead`, `parseDavMultistatusStream`, `DavXmlParser`, `resolveDavHref` | Nextcloud query bodies, namespaces, file IDs, limits and node mapping remain app-owned | `dav_client_test.dart`, `dav_multistatus_test.dart`, provider adapter tests; 100 deterministic cases pass |
 | BusyMax Settings and application bootstrap | `ContactsDirectory` and Google/Microsoft/CardDAV provider libraries | `BusyMaxContactsController`; existing account token/authorization staging, Android native authorization and secure-store boundaries | contacts controller/store, Google/Microsoft OAuth, Android authorization and database migration tests |
-| BusyMax Linux `EventEditor`, Fluent Windows dialog and Android schedule attendee entry | cached `ContactsDirectory.suggestRecipients` | `BusyMaxContactsStore.selection` supplies linked-account and enabled-source scope; platform UI retains manual entry and attendee metadata | Linux editor (80), Windows preservation (17), Android/adaptive suites and contacts tests |
-| BusyMax Microsoft calendar and To Do clients | `busystack_graph.GraphClient` via `BusyMaxGraphTransport` | distinct ordinary/shared-calendar/category authorization callbacks; calendar timezone and mutation policy remain in callers | calendar/To Do Graph fixtures (45), OAuth and attachment tests |
-| BusyMax DAV HTTP/XML/href/error layers | `DavHttpTransport`, `DavProviderProfile`, shared error/href/XML public types | calendar/task endpoints, iCalendar, scheduling, ACL, sync engine and Nextcloud/iCloud policy remain app-owned | DAV transport/XML/discovery/mutation/sync suites (345 focused cases) |
+| BusyMax Linux `EventEditor`, Fluent Windows dialog and Android schedule attendee entry | cached `ContactsDirectory.suggestRecipients` | `BusyMaxContactsStore.selection` supplies linked-account and enabled-source scope; platform UI retains manual entry and attendee metadata | 21 actual three-platform suggestion fencing cases plus original manual-entry/metadata/platform preservation coverage in the complete 3,512-test suite |
+| BusyMax Microsoft calendar and To Do clients | `busystack_graph.GraphClient` via `BusyMaxGraphTransport` | distinct ordinary/shared-calendar/category authorization callbacks; calendar timezone and mutation policy remain in callers | calendar/To Do attachment ordinary-401/claims/range fixtures; 50 combined focused Graph cases and complete suite |
+| BusyMax DAV HTTP/XML/href/error layers | `DavHttpTransport`, `DavProviderProfile`, shared error/href/XML public types | calendar/task endpoints, iCalendar, scheduling, ACL, sync engine and Nextcloud/iCloud policy remain app-owned | DAV transport/XML/discovery/mutation/sync suites, including the retained 345-case integration focus and complete final suite |
 
 ## Persistence and permission changes
 
 - BusyCards retains its contacts-only SQLCipher database and now serializes the
   asynchronous shared transaction contract across yielded callbacks.
-- BusyBox advances its encrypted mail database from schema 8 to **9**. Tables
+- BusyBox advances its encrypted mail database from schema 8 through 9 to **10**. Tables
   use the `bb_contact_*` namespace for accounts, links, sources, records,
   mutations, conflicts, drafts, sync state and source preferences. Contacts-only
   DAV accounts do not become `MailProvider` accounts and closing the adapter
-  does not close the mail database.
+  does not close the mail database. Schema 10 adds a non-secret enrollment
+  recovery journal without resetting existing schema-9 data. Independent DAV
+  links do not transfer credential ownership to a mail account.
 - BusyMax advances its existing application database from schema 19 to **20**.
   Tables use the `bm_contact_*` namespace and explicit links to optional
   calendar/task accounts. The adapter uses the existing Drift transaction and
@@ -82,5 +84,60 @@ Linux/Windows/Android workflows, and BusyCards' current-source and four-target
 bundle paths preserve the sibling directory relationship. BusyFiles remains its
 own workspace; `busystack_dav` is an ordinary external dependency.
 
-Detailed command results and the intentionally open host/live gates are in
-`validation/milestone-2/final-results.md` and the final Milestone 2 report.
+Current corrective results are in the [report](milestone-2-report.md),
+[compact ledger](milestone-2-ledger.md) and accompanying corrective evidence
+bundle. `validation/milestone-2` records historical 6 October evidence.
+
+## Corrective lifecycle and product wiring
+
+`ContactsDirectory.bind(accountGeneration:)` validates the persisted generation
+before and after awaited provider work. `detach` invalidates and drains an old
+binding without disabling the replacement record; explicit `disconnect`
+continues to disable it. Provider cleanup closes every owned provider and
+retains primary and additional errors. BusyCards owns its exception-safe
+SQLCipher queue; BusyBox and BusyMax own their existing Drift database adapter
+operations and post-commit configuration streams. Closing a contacts adapter
+does not close the application's shared database or calendar/task token client.
+
+BusyMax Linux/Yaru, Windows/Fluent and Android Settings route through the same
+controller and staged app authorization boundaries. Google/Microsoft read-only
+setup, explicit write consent, reconnect, disable/remove and source selection
+are available on the actual platform routes. Independent CardDAV/Nextcloud
+contacts do not acquire calendar/task permissions. The three attendee controls
+capture account/source/query eligibility, invalidate displayed and pending
+results when it changes, and retain manually entered and selected attendees.
+
+BusyBox native Settings exposes independent DAV/Nextcloud association to a
+selected mail context separately from suggestion preferences and editing mode.
+The real composer preserves correspondent-first ranking and applies contact
+eligibility/exclusions before its eight-result limit. Independent credentials
+survive mail-link removal; OAuth connections depending on removed mail
+authorization follow the existing account ownership. Configuration writes
+publish after commit; Settings and recipient controls version reloads and
+observe pending/errors and changed eligibility.
+
+BusyBox's basic contact editor retains the full provider-native selected record
+and sends only actual field changes. One email edit preserves repeated values
+and native IDs/labels/parameters. Structured Google names expose given-name
+editing because People `displayName` is output-only; family/middle/native name
+fields remain intact. New contacts require an explicit writable destination.
+Dirty navigation and in-flight save generation checks protect the draft.
+Only confirmed mutations are saved; failed/conflict/unknown states keep their
+logical journal ID and draft across restart. Recovery uses shared retry or
+reconcile rather than issuing another create.
+
+BusyBox enrollment is owned by the existing AccountManager transition and
+credential authority from consent through commit/conditional rollback. Google
+staged results retain their original authority; Microsoft retains Java/MSAL
+and conditional protected-cache stages. Identity, registration, tenant and
+generation are checked at the durable boundary. Separate Secret Service and
+SQLite commits use staged recovery; no cross-store atomicity is claimed.
+Scheduled tasks in both apps have explicit failure observers and account
+status, while manually requested failures remain awaitable.
+
+`GraphClient.download` permits one ordinary confirmed-401 forced-refresh and
+one claims replay before yielding any bytes, with a shared finite replay
+budget. It preserves range/caller headers, cancellation and account-scoped
+claims. Payload already yielded is never restarted. Calendar/To Do attachment
+callers and BusyBox's integrated Graph mail/upload consumers exercise this
+shared implementation. Exact preauthorized bearer-free uploads are retained.
