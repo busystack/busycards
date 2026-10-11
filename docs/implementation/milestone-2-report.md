@@ -1,13 +1,116 @@
 # Milestone 2 corrective implementation and acceptance
 
-Corrective assignment B1–B12, **10 October 2026**. This report supersedes the
+Final lifecycle corrections C1–C3 following the completed B1–B12 assignment, **10 October 2026**. This report supersedes the
 6 October status, preserved beside it as dated historical documents. The
 seven repositories remain independent. Application databases, credentials,
 authentication, UI and lifecycle remain application-owned. BusyFiles has no
 contacts functionality. No external account, OAuth registration, push,
 publication or installation over an owner's application was performed.
 
-## Corrected production paths
+
+## C1–C3 final lifecycle corrections
+
+| Item | Root cause and changed production boundary | Final regression outcome |
+|---|---|---|
+| C1 | Parent removal held authorization serialization while its contacts hook awaited enrollment queued behind that same boundary. Browser cancellation could not interrupt the later persistence await. Claim one removal attempt synchronously, fence and invalidate enrollment, capture identity/generation under serialization, release it to cancel/drain, then reacquire and validate before coherent removal. No serialization, cleanup, staged rollback or late-write validation was detached or bypassed. No production timeout was added. | Actual repository/controller/hooks, desktop broker, Google/Microsoft OAuth services and one AuthorizationPersistence; real Drift store; only external provider/secret interactions mocked. Deterministic removal-boundary pauses, already-granted/fresh consent, before/after staging, coalescing/fence, reversible failure, replacement generation, unrelated account and shutdown. Durable account/credential/contact absence and denied stale commits asserted. Passing complete final affected suite; receipts below. |
+| C2 | Preparation disabled only enabled contacts, while failure recovery enabled any surviving disabled linked account without recording what that removal attempt changed. The same removal receipt owns its changed contact row, parent identity, authorization generation and recovery authority. Recovery compares the exact changed row/generation and parent authorization state; newer disable/removal/replacement revokes authority. Only complete reversible rollback can restore. Retained journals, committed removal and successful remote revocation cannot restore. | Actual parent removal with enabled/disabled/absent contacts; Google/Microsoft secret-store and database failures; runtime binding and whether provider synchronization was scheduled; successful/irreversible removal; newer user/account/authorization changes while recovery waits; real file-database restart. Originally disabled/absent contacts remain so; unrelated accounts remain usable. Passing complete final affected suite; receipts below. |
+| C3 | The initial account read preceded completion cleanup inside putIfAbsent, leaving its failed future in _synchronizing and poisoning later manual/scheduled attempts. The entire operation, including initial read, enters try/catch/finally. Active work coalesces; completion removes only its own entry. Explicit callers retain the original failure, scheduled observers report it, and status updates require a captured valid generation. Initial failure cannot invent a record or overwrite status. | Real controller and Drift store with an interceptor failing exactly the target account initial read. First original error, shared active future, later discovery/provider success, manual/scheduled observation, second account, overlapping cancellation/removal, durable absence and shutdown asserted. Contacts cleanup leaves the mail database open; filtering and post-commit notifications retained. Passing complete final affected suite; receipts below. |
+
+Google/Microsoft fresh-consent positive regressions also exposed the omitted parent grant metadata and qualified Graph contacts grants. The existing OAuth commit now stores returned parent grants and contacts atomically; the contacts adapter stores its expected scope names. Candidate validation, identity, authorization generation and registration binding remain at the actual persistence boundary. Shared packages and pins are unchanged.
+
+| Complete corrected gate | Committed tested content | Actual result |
+|---|---|---|
+| busymax `flutter test --no-pub --reporter expanded --concurrency 2` | `40b3ab6c89fe30cf8580be61ab0f44eb60a99788`; tree `86ed99acc0b8c866513259b5e3224648507584cb` | 3,559 passed; 10 existing skips; exit 0. |
+| busybox `flutter test --no-pub --reporter expanded --concurrency 1` | `5aeba272bde4f6798fadaa394c037e8b7aaf74e6`; tree `83584bf02e4d6d0638ce4057b8b812aef060906c` | 1,186 passed; 3 existing skips; exit 0. |
+
+Complete-suite receipts record the live initial HEAD plus the corrected uncommitted tree fingerprint. After explicit staging/commit, the same file-union fingerprint proves the delivered commit has exactly the tested content. No source change followed the passing full gates.
+
+BusyMax: 47 lifecycle cases and 325 focused authorization/removal/enrollment/database cases passed. BusyBox: 15 final storage/controller cases passed; its broader 186-case focused run had one existing helper-gated skip. Final touched-file formatting, analysis and BusyMax platform-boundary checks pass. Exact locked/generation prerequisites were run and their hashes remain identical. The existing provider references and current [Dart Future documentation](https://api.dart.dev/dart-async/Future-class.html) and [Drift transaction guidance](https://drift.simonbinder.eu/dart_api/transactions/) were checked only for the asynchronous-operation and transaction contracts affected here.
+
+The first complete runs remain visible: BusyMax 3,558 passed / 10 skipped / one DAV fixture failure; BusyBox 1,185 passed / 3 skipped / one migration-startup fixture failure. Neither was counted as a passing gate. The diagnosed fixture corrections are: An early timeout could leave a delayed response fault unconsumed; the following drop request received its empty 207. A zero-deadline probe reproduced the same failure on reviewed production. A separate FakeDavServer for the timeout stage passes that probe and all four original real-socket cases; original assertions/deadline retained. No DAV package/production change. Dart/native-hook startup alone took 20.576589 seconds, exceeding the existing migration readiness deadline before database work. The test helper now marks startup; the test separately bounds startup at one minute, retains the twenty-second preparation bound and original two-minute outer bound, then asserts the same durable phase/SIGKILL/restart integrity. All fifteen storage/controller cases pass. No storage production change.
+
+BusyMax’s ten skips are explicitly opt-in live Nextcloud/iCloud/login/sharing/restart cases; no disposable live accounts or registrations were authorized. BusyBox’s three standard skips are the separately gated encrypted performance run and two real-MSAL-helper opt-in cases. Historical standard/helper/positive Secret Service/encrypted-store evidence remains attached to its tested inputs; current packaged helper checks are separate receipts.
+
+| Receipt | Exact command (cwd in machine receipt) | Exit | Actual log |
+|---|---|---:|---|
+| `max-baseline-deadlock-observed` | `timeout --signal=TERM --kill-after=5s 60s flutter test --no-pub --reporter expanded test/contacts/parent_removal_lifecycle_test.dart --plain-name 'BusyProvider.google already granted enrollment queued behind removal drains'` | 1 | `.m2-correction/lifecycle/logs/max-baseline-deadlock-observed.log` |
+| `max-baseline-c2-red` | `timeout 45s flutter test --no-pub --reporter expanded --plain-name reversible test/contacts/parent_removal_lifecycle_test.dart` | 1 | `.m2-correction/lifecycle/logs/max-baseline-c2-red.log` |
+| `box-baseline-red-final` | `flutter test --no-pub --reporter expanded test/application/contacts_initial_read_failure_test.dart` | 1 | `.m2-correction/lifecycle/logs/box-baseline-red-final.log` |
+| `max-fresh-positive-red` | `flutter test --no-pub --reporter expanded --plain-name 'fresh consent positive' test/contacts/parent_removal_lifecycle_test.dart` | 1 | `.m2-correction/lifecycle/logs/max-fresh-positive-red.log` |
+| `max-recovery-authority-red` | `flutter test --no-pub --reporter expanded --plain-name 'incomplete credential rollback' test/contacts/parent_removal_lifecycle_test.dart` | 1 | `.m2-correction/lifecycle/logs/max-recovery-authority-red.log` |
+| `max-recovery-final` | `flutter test --no-pub --reporter expanded test/contacts/parent_removal_lifecycle_test.dart` | 0 | `.m2-correction/lifecycle/logs/max-recovery-final.log` |
+| `max-focused-final-tree` | `flutter test --no-pub --reporter expanded test/contacts test/core/auth/authorization_transition_test.dart test/google_tasks/oauth test/microsoft_todo/oauth test/features/auth/data test/features/sync/account_sync_operations_test.dart test/db` | 0 | `.m2-correction/lifecycle/logs/max-focused-final-tree.log` |
+| `box-focused` | `flutter test --no-pub --reporter expanded test/application/contacts_initial_read_failure_test.dart test/application/contacts_controller_test.dart test/application/contacts_enrollment_test.dart test/application/account_manager_removal_test.dart test/application/mail_runtime_shutdown_test.dart test/application/mailbox_application_shutdown_test.dart test/storage/contacts_store_test.dart test/storage/contacts_enrollment_migration_test.dart test/auth` | 0 | `.m2-correction/lifecycle/logs/box-focused.log` |
+| `box-storage-controller-final-green` | `flutter test --no-pub --reporter expanded --concurrency 1 test/storage/encrypted_database_test.dart test/application/contacts_initial_read_failure_test.dart` | 0 | `.m2-correction/lifecycle/logs/box-storage-controller-final-green.log` |
+| `max-dav-fixture-early-timeout-red` | `flutter test --no-pub --reporter expanded test/dav/fake_dav_server_integration_test.dart --plain-name 'status, per-resource, malformed, invalid-token, delay, and drop matrix'` | 1 | `.m2-correction/lifecycle/logs/max-dav-fixture-early-timeout-red.log` |
+| `max-dav-fixture-early-timeout-green` | `flutter test --no-pub --reporter expanded test/dav/fake_dav_server_integration_test.dart --plain-name 'status, per-resource, malformed, invalid-token, delay, and drop matrix'` | 0 | `.m2-correction/lifecycle/logs/max-dav-fixture-early-timeout-green.log` |
+| `max-dav-fixture-final-green` | `flutter test --no-pub --reporter expanded --concurrency 1 test/dav/fake_dav_server_integration_test.dart` | 0 | `.m2-correction/lifecycle/logs/max-dav-fixture-final-green.log` |
+| `box-encrypted-storage-recheck` | `flutter test --no-pub --reporter expanded --concurrency 1 test/storage/encrypted_database_test.dart` | 1 | `.m2-correction/lifecycle/logs/box-encrypted-storage-recheck.log` |
+| `box-migration-child-build-hooks-probe` | `dart run test/helpers/migration_crash_helper.dart` | 64 | `.m2-correction/lifecycle/logs/box-migration-child-build-hooks-probe.log` |
+| `max-final-format-analysis-platform-v2` | `python3 /home/albert/busystack/.m2-correction/lifecycle/validate.py busymax --checks-only` | 0 | `.m2-correction/lifecycle/logs/max-final-format-analysis-platform-v2.log` |
+| `box-final-format-analysis` | `python3 /home/albert/busystack/.m2-correction/lifecycle/validate.py busybox --checks-only` | 0 | `.m2-correction/lifecycle/logs/box-final-format-analysis.log` |
+| `max-full-verified-sequential` | `flutter test --no-pub --reporter expanded --concurrency 2` | 0 | `.m2-correction/lifecycle/logs/max-full-verified-sequential.log` |
+| `box-full-verified-sequential` | `flutter test --no-pub --reporter expanded --concurrency 1` | 0 | `.m2-correction/lifecycle/logs/box-full-verified-sequential.log` |
+| `reference-debug-default-close` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busymax /home/albert/busystack/.m2-correction/fresh/reference/busymax/build/linux/x64/debug/bundle/busymax reference-debug-default` | 64 | `.m2-correction/lifecycle/logs/reference-debug-default-close.log` |
+| `reference-debug-default-close-reproduced` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busymax /home/albert/busystack/.m2-correction/fresh/reference/busymax/build/linux/x64/debug/bundle/busymax reference-debug-default` | 64 | `.m2-correction/lifecycle/logs/reference-debug-default-close-reproduced.log` |
+| `reference-debug-default-close-isolated` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busymax /home/albert/busystack/.m2-correction/fresh/reference/busymax/build/linux/x64/debug/bundle/busymax reference-debug-default` | 0 | `.m2-correction/lifecycle/logs/reference-debug-default-close-isolated.log` |
+| `reference-debug-mesa-close` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busymax /home/albert/busystack/.m2-correction/fresh/reference/busymax/build/linux/x64/debug/bundle/busymax reference-debug-mesa` | 0 | `.m2-correction/lifecycle/logs/reference-debug-mesa-close.log` |
+| `reference-debug-default-gdb` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busymax /home/albert/busystack/.m2-correction/fresh/reference/busymax/build/linux/x64/debug/bundle/busymax reference-debug-default-gdb` | 0 | `.m2-correction/lifecycle/logs/reference-debug-default-gdb.log` |
+| `source-final-busybox` | `python3 /home/albert/busystack/.m2-correction/lifecycle/artifacts.py source busybox` | 0 | `.m2-correction/lifecycle/logs/source-final-busybox.log` |
+| `fresh-source-busybox-locks` | `flutter pub get --offline --enforce-lockfile` | 0 | `.m2-correction/lifecycle/logs/fresh-source-busybox-locks.log` |
+| `source-final-busymax` | `python3 /home/albert/busystack/.m2-correction/lifecycle/artifacts.py source busymax` | 0 | `.m2-correction/lifecycle/logs/source-final-busymax.log` |
+| `fresh-source-busymax-locks` | `flutter pub get --offline --enforce-lockfile` | 0 | `.m2-correction/lifecycle/logs/fresh-source-busymax-locks.log` |
+| `box-linux-final` | `python3 /home/albert/busystack/.m2-correction/lifecycle/platforms.py busybox linux` | 1 | `.m2-correction/lifecycle/logs/box-linux-final.log` |
+| `box-linux-final-isolated` | `python3 /home/albert/busystack/.m2-correction/lifecycle/platforms.py busybox linux` | 1 | `.m2-correction/lifecycle/logs/box-linux-final-isolated.log` |
+| `box-linux-final-fresh` | `python3 /home/albert/busystack/.m2-correction/lifecycle/platforms.py busybox linux` | 1 | `.m2-correction/lifecycle/logs/box-linux-final-fresh.log` |
+| `native-archive-busymax` | `python3 /home/albert/busystack/.m2-correction/lifecycle/artifacts.py native busymax` | 0 | `.m2-correction/lifecycle/logs/native-archive-busymax.log` |
+| `max-linux-final` | `python3 /home/albert/busystack/.m2-correction/lifecycle/platforms.py busymax linux` | 0 | `.m2-correction/lifecycle/logs/max-linux-final.log` |
+| `box-linux-final-completion` | `python3 /home/albert/busystack/.m2-correction/lifecycle/platforms.py busybox linux --resume-linux` | 0 | `.m2-correction/lifecycle/logs/box-linux-final-completion.log` |
+| `native-archive-busybox` | `python3 /home/albert/busystack/.m2-correction/lifecycle/artifacts.py native busybox` | 0 | `.m2-correction/lifecycle/logs/native-archive-busybox.log` |
+| `native-archive-busymax-symbols` | `python3 /home/albert/busystack/.m2-correction/lifecycle/artifacts.py symbols busymax` | 0 | `.m2-correction/lifecycle/logs/native-archive-busymax-symbols.log` |
+| `native-archive-busybox-symbols` | `python3 /home/albert/busystack/.m2-correction/lifecycle/artifacts.py symbols busybox` | 0 | `.m2-correction/lifecycle/logs/native-archive-busybox-symbols.log` |
+| `candidate-busymax-release-default` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busymax /home/albert/busystack/.m2-correction/lifecycle/extracted/busymax-linux-x64/busymax-0.2.4/busymax candidate-release-default` | 0 | `.m2-correction/lifecycle/logs/candidate-busymax-release-default.log` |
+| `candidate-busymax-release-mesa` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busymax /home/albert/busystack/.m2-correction/lifecycle/extracted/busymax-linux-x64/busymax-0.2.4/busymax candidate-release-mesa` | 0 | `.m2-correction/lifecycle/logs/candidate-busymax-release-mesa.log` |
+| `candidate-busymax-debug-default` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busymax /home/albert/busystack/.m2-correction/lifecycle/extracted/busymax-source/busymax/build/linux/x64/debug/bundle/busymax candidate-debug-default` | 0 | `.m2-correction/lifecycle/logs/candidate-busymax-debug-default.log` |
+| `candidate-busymax-debug-mesa` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busymax /home/albert/busystack/.m2-correction/lifecycle/extracted/busymax-source/busymax/build/linux/x64/debug/bundle/busymax candidate-debug-mesa` | 0 | `.m2-correction/lifecycle/logs/candidate-busymax-debug-mesa.log` |
+| `candidate-busybox-release-default` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busybox /home/albert/busystack/.m2-correction/lifecycle/extracted/busybox-linux-x64/busybox-0.0.1/busybox-mail candidate-release-default` | 0 | `.m2-correction/lifecycle/logs/candidate-busybox-release-default.log` |
+| `candidate-busybox-release-mesa` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busybox /home/albert/busystack/.m2-correction/lifecycle/extracted/busybox-linux-x64/busybox-0.0.1/busybox-mail candidate-release-mesa` | 0 | `.m2-correction/lifecycle/logs/candidate-busybox-release-mesa.log` |
+| `max-android-final-daemon-diagnostic` | `jstack -l 3358887` | 0 | `.m2-correction/lifecycle/logs/max-android-final-daemon-diagnostic.log` |
+| `candidate-busybox-debug-default` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busybox /home/albert/busystack/.m2-correction/lifecycle/extracted/busybox-source/busybox/build/linux/x64/debug/bundle/busybox-mail candidate-debug-default` | 0 | `.m2-correction/lifecycle/logs/candidate-busybox-debug-default.log` |
+| `candidate-busybox-debug-mesa` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busybox /home/albert/busystack/.m2-correction/lifecycle/extracted/busybox-source/busybox/build/linux/x64/debug/bundle/busybox-mail candidate-debug-mesa` | 0 | `.m2-correction/lifecycle/logs/candidate-busybox-debug-mesa.log` |
+| `snap-final-build` | `python3 /home/albert/busystack/.m2-correction/lifecycle/snap_project.py` | 1 | `.m2-correction/lifecycle/logs/snap-final-build.log` |
+| `max-android-final-current-download-diagnostic` | `jstack -l 3358887` | 0 | `.m2-correction/lifecycle/logs/max-android-final-current-download-diagnostic.log` |
+| `candidate-busymax-release-default-settled` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busymax /home/albert/busystack/.m2-correction/lifecycle/extracted/busymax-linux-x64/busymax-0.2.4/busymax candidate-release-default-settled` | 0 | `.m2-correction/lifecycle/logs/candidate-busymax-release-default-settled.log` |
+| `snap-final-relay-conditional-check` | `curl --fail --silent --show-error --proxy http://10.33.34.1:33319 --connect-timeout 10 --max-time 60 -H 'If-Modified-Since: Thu, 10 Oct 2030 00:00:00 GMT' -o /dev/null -w 'HTTP %{http_code}\n' http://archive.ubuntu.com/ubuntu/dists/noble/InRelease` | 0 | `.m2-correction/lifecycle/logs/snap-final-relay-conditional-check.log` |
+| `candidate-busymax-release-mesa-settled` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busymax /home/albert/busystack/.m2-correction/lifecycle/extracted/busymax-linux-x64/busymax-0.2.4/busymax candidate-release-mesa-settled` | 0 | `.m2-correction/lifecycle/logs/candidate-busymax-release-mesa-settled.log` |
+| `candidate-busymax-debug-default-settled` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busymax /home/albert/busystack/.m2-correction/lifecycle/extracted/busymax-source/busymax/build/linux/x64/debug/bundle/busymax candidate-debug-default-settled` | 0 | `.m2-correction/lifecycle/logs/candidate-busymax-debug-default-settled.log` |
+| `candidate-busymax-debug-mesa-settled` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busymax /home/albert/busystack/.m2-correction/lifecycle/extracted/busymax-source/busymax/build/linux/x64/debug/bundle/busymax candidate-debug-mesa-settled` | 0 | `.m2-correction/lifecycle/logs/candidate-busymax-debug-mesa-settled.log` |
+| `snap-final-relay-contracts` | `python3 /home/albert/busystack/.m2-correction/lifecycle/proxy_contract_test.py` | 0 | `.m2-correction/lifecycle/logs/snap-final-relay-contracts.log` |
+| `reference-debug-default-close-settled` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busymax /home/albert/busystack/.m2-correction/fresh/reference/busymax/build/linux/x64/debug/bundle/busymax reference-debug-default-settled` | 0 | `.m2-correction/lifecycle/logs/reference-debug-default-close-settled.log` |
+| `reference-debug-mesa-close-settled` | `python3 /home/albert/busystack/.m2-correction/lifecycle/close_gate.py busymax /home/albert/busystack/.m2-correction/fresh/reference/busymax/build/linux/x64/debug/bundle/busymax reference-debug-mesa-settled` | 0 | `.m2-correction/lifecycle/logs/reference-debug-mesa-close-settled.log` |
+| `snap-final-build-repaired-relay` | `python3 /home/albert/busystack/.m2-correction/lifecycle/snap_resume.py` | 143 | `.m2-correction/lifecycle/logs/snap-final-build-repaired-relay.log` |
+| `max-android-final` | `python3 /home/albert/busystack/.m2-correction/lifecycle/platforms.py busymax android` | 1 | `.m2-correction/lifecycle/logs/max-android-final.log` |
+| `max-android-final-cached` | `python3 /home/albert/busystack/.m2-correction/lifecycle/platforms.py busymax android` | 1 | `.m2-correction/lifecycle/logs/max-android-final-cached.log` |
+| `max-android-final-primary-resolution` | `python3 /home/albert/busystack/.m2-correction/lifecycle/platforms.py busymax android` | 1 | `.m2-correction/lifecycle/logs/max-android-final-primary-resolution.log` |
+| `max-android-final-scoped-download-diagnostic` | `python3 -c 'import subprocess,pathlib; p=pathlib.Path('"'"'/home/albert/busystack/.m2-correction/lifecycle/logs/android-scoped-daemon-stack.log'"'"'); x=subprocess.run(['"'"'jstack'"'"','"'"'3481436'"'"'],capture_output=True,text=True); p.write_text(x.stdout+x.stderr); print('"'"'stack bytes'"'"',p.stat().st_size); print('"'"'\n'"'"'.join(s for s in x.stdout.splitlines() if any(q in s for q in ['"'"'SocketDispatcher'"'"','"'"'SSLSocket'"'"','"'"'HttpClient'"'"','"'"'kotlin'"'"','"'"'RUNNABLE'"'"','"'"'BLOCKED'"'"']))[:6000]); raise SystemExit(x.returncode)'` | 0 | `.m2-correction/lifecycle/logs/max-android-final-scoped-download-diagnostic.log` |
+
+
+Current packaging status: Corrected-tree Android native unit/lint and APK/AAB registration-mode rebuilds remain blocked before native tests by unavailable existing Gradle/plugin prerequisites: latest offline failure is system_theme com.android.tools.build:gradle:4.1.0. No dependency downgrade/change was made; no new Android payload is delivered. Earlier native/emulator/test-signed artifacts remain historical for their exact tested inputs.
+
+Corrected-tree BusyBox standard core24 Snap rebuild failed before application compilation installing gnome-46-2404-sdk latest/stable (exit 1). Earlier public APT/Mesa download failures and relay repairs are retained. Public locked Pub inputs and signed Mesa build prerequisite were verified in the task-only container; they do not constitute a package pass. No new Snap is delivered; old package/review evidence remains historical.
+
+The latest exact attempts are:
+
+| Receipt | Exact command | Exit | Actual log |
+|---|---|---:|---|
+| `max-android-final-existing-plugin-boms` | `python3 /home/albert/busystack/.m2-correction/lifecycle/platforms.py busymax android` | 1 | `.m2-correction/lifecycle/logs/max-android-final-existing-plugin-boms.log` |
+| `snap-final-build-signed-prerequisites` | `python3 /home/albert/busystack/.m2-correction/lifecycle/snap_resume.py` | 1 | `.m2-correction/lifecycle/logs/snap-final-build-signed-prerequisites.log` |
+
+All public-prerequisite/cache/diagnostic commands and failed attempts are retained in the machine report; their success is not an Android or Snap application verification gate. The detailed Snapcraft logs are included as actual files. The task-only public relay is stopped and the read-only Mesa cache mount is absent after Snapcraft cleanup.
+
+Every receipt carries start/end tree fingerprint, live HEAD, exact cwd/argv, duration, exit and log SHA256. Full current command records and commit/tree mappings are in `milestone-2-results.json` and the successor evidence archive. The prior archive was located and verified; the successor carries its actual historical entries plus current logs/receipts/captures/inventory. Delivery guide, manifest and checksums are under `.m2-correction/delivery/lifecycle-final`; original `.m2-correction/delivery/final` is preserved.
+
+## Retained B1–B12 production paths
 
 | Item | Root cause and changed production boundary | Regression and outcome |
 |---|---|---|
@@ -66,7 +169,7 @@ of the generated registrant URI. The existing unexpected-path rejection stays
 strict. Its old recipe fails and the corrected recipe passes. Final Snap
 qualification is recorded separately below.
 
-## Final-tree verification
+## Historical B1–B12 verification
 
 | Final complete gate | Tested revision | Actual outcome |
 |---|---|---|
@@ -75,9 +178,9 @@ qualification is recorded separately below.
 | BusyFiles `scripts/verify.sh` through its attested engine wrapper | `14c2853c` | 1,790 Dart/Flutter cases passed; 26 existing skips; full analysis/source/native gates passed. |
 | BusyCards `tool/verify.py --offline` (exactly four repositories) | `6518526c` plus packages below | Graph 51, DAV 74, contacts 99 and BusyCards 188 passed; locked resolution, non-mutating format/analysis, examples, encrypted store/stream, Java/helper/positive Secret Service, native CTest and Linux debug/release gates passed. |
 
-BusyBox additionally passes generation, helper Maven verification, packaged
+At the historical revisions above, BusyBox additionally passes generation, helper Maven verification, packaged
 protocol/runtime/cache checks, source/shell checks, release-script tests, native
-CTest (5/5), Linux debug/release and current-source Snap build. BusyMax Linux
+CTest (5/5), Linux debug/release and its then-current-source Snap build. BusyMax Linux
 debug/release/native GTK/locale/ASan and both Android release registration modes
 pass. Available native/platform results remain distinct from widget fixtures.
 
@@ -106,7 +209,7 @@ failures and explicitly terminated task runs remain visible. Focused tests, stan
 suites, native builds, positive credential fixtures and rendered controls are
 distinct evidence. Existing skips remain existing skips.
 
-Only task-owned Dart files were formatted. BusyMax's whole-tree formatting
+In the historical B1–B12 verification, only task-owned Dart files were formatted. BusyMax's whole-tree formatting
 check reports 236 pre-existing files, verified byte-identical to its original
 HEAD; BusyBox's whole-tree command found two ignored stale Snap-generated
 files. Source formatting checks and `git diff --check` pass. SDK, Dart, Java,
@@ -114,7 +217,7 @@ MSAL and dependency pins remain unchanged. The private toolchain is Flutter
 3.47.5, Dart 3.13.4 and Temurin Java 25.0.1; BusyFiles uses the existing attested
 engine inputs through its own wrapper, not stock Flutter.
 
-## Native, rendered and independent layout acceptance
+## Historical native, rendered and independent layout acceptance
 
 BusyCards native X11 acceptance covers selection/edit, keyboard search,
 Unicode clipboard copy/paste, dirty close/cancel/save, a real GTK file chooser,
@@ -145,14 +248,8 @@ close are verified in empty private HOME/XDG/Secret Service; Files runs every
 packaged format independently. Report-only source differences are checked
 separately from tested runtime implementation. Default independent Xvfb runs
 select the installed Mesa ICD/software renderer without changing SDK/runtime
-pins. An earlier BusyMax native close exited 139 with default ICD enumeration;
-the untouched reference reproduces it, and gdb shows NVIDIA EGL `dlclose` during
-process exit. The reference debug build also exits 139 with Mesa, so the sole
-cause is not established; its native orderly-close gate remains failed. Those
-existing reference/runtime-driver failures and the initial read-only harness
-temporary-directory failure are retained, not converted into passes. Physical GPU/default-driver close acceptance and original-reference native
-orderly close remain unverified. Current Box debug, Max release and Cards debug
-Mesa-qualified startup/native close each exit 0.
+pins. Exact historical reference debug SHA256 562040d069a3e6d75d2966dcf7099f51265fcc70b82fa9d7769ae8870cb3b9f8 at recorded source revision 8151130a560025aade0acd1ceb03f9a1abcec6cd retested: default, Mesa/software and default under gdb exit 0; additional default/Mesa attempts after schedule startup settled also exit 0. Full preserved bundle inventory is in reference-build-identity.json. Earlier default and Mesa exit139 remains failed/unresolved. Recorded crashing thread was io.flutter.io in LLVM MachineRegisterInfo::addRegOperandToUseList; main concurrently unloaded NVIDIA EGL. A sole cause is not established; no SDK/driver changes or forced software workaround shipped. Current candidate debug/release results are recorded separately in the lifecycle receipts; local Xvfb close does not qualify physical hardware.
+
 
 Post-fix measurements: the 50,000-record real encrypted Cards harness performs
 500 sync pages in 19,347 ms, browse in 7,467 µs, search median 15,999 µs/p95
@@ -161,7 +258,7 @@ Nextcloud provider streams 128 MiB in 1.609 s (32 chunks; headers 0.243 s),
 18,644,992-byte RSS growth, bounded server progress during consumer pause, and
 explicit cancellation after 4,128,715 bytes without replay. Files packaged
 Wayland first usable time is 3.520/2.782/6.220 s at 1,000/10,000/100,000 fixture
-entries. These are new local synthetic measurements, not live-provider timings
+entries. These are historical local synthetic measurements, not live-provider timings
 or portable performance guarantees.
 
 The rendered BusyCards reference is an isolated copy of BusyMax HEAD
@@ -177,12 +274,7 @@ byte-identical Flutter AOT is inferred from source similarity.
 
 ## Precise open gates
 
-The original BusyMax reference debug build exits 139 on native window close
-under both default and Mesa ICD selection in the private Xvfb fixture. The
-default trace shows NVIDIA EGL unloading, but a sole cause is not established.
-Current Max release and Box/Cards debug pass the separate Mesa-qualified native
-close check. Reference-debug orderly close and physical/default-driver GPU
-acceptance remain failed/unverified; this is not reported as a completed gate.
+Exact historical reference debug SHA256 562040d069a3e6d75d2966dcf7099f51265fcc70b82fa9d7769ae8870cb3b9f8 at recorded source revision 8151130a560025aade0acd1ceb03f9a1abcec6cd retested: default, Mesa/software and default under gdb exit 0; additional default/Mesa attempts after schedule startup settled also exit 0. Full preserved bundle inventory is in reference-build-identity.json. Earlier default and Mesa exit139 remains failed/unresolved. Recorded crashing thread was io.flutter.io in LLVM MachineRegisterInfo::addRegOperandToUseList; main concurrently unloaded NVIDIA EGL. A sole cause is not established; no SDK/driver changes or forced software workaround shipped.
 
 The full reference Wayland Settings/keyboard/clipboard/native-chooser rendered
 comparison has not passed: real reference startup/initial owned paint is
@@ -192,9 +284,9 @@ physical keyboard/clipboard/file-dialog acceptance. A capable interactive
 Wayland comparison session and the remaining exhaustive rendered matrix are
 still required; X11 evidence does not substitute for them.
 
-The official current Snap review reports 51 informational checks OK, no
+The historical official Snap review reported 51 informational checks OK, no
 warnings, and one existing D-Bus slot declaration requiring human store review
-(`busybox-dbus`, `deny-connection` constraint), exit 2. Build, contents/security,
+(`busybox-dbus`, `deny-connection` constraint), exit 2. For that historical package, build, contents/security,
 resquash checksum and actual packaged helper/positive cache fixtures pass.
 Store review/publication and strict installed Snap confinement acceptance are
 not claimed; no store declaration was registered and no owner Snap was installed
@@ -211,8 +303,8 @@ emulator acceptance does not certify a physical device or production signing.
 
 | Repository | Final tested implementation revision |
 |---|---|
-| busybox | `38ed8fed455ad1a537b3bbefd21bf7bec2376774` |
-| busymax | `19c6cf3e753f590ec73510988a23b4c4b81f74ec` |
+| busybox | `5aeba272bde4f6798fadaa394c037e8b7aaf74e6` |
+| busymax | `40b3ab6c89fe30cf8580be61ab0f44eb60a99788` |
 | busyfiles | `14c2853cc089345d2b1ed053fc0d34b1a7477110` |
 | busycards | `6518526cb624a859f126f85a0ccf3e020a265190` |
 | busystack_contacts | `cf399b9af0b7bf8a315e8c5d6123e601c90b7bd2` |
@@ -225,13 +317,12 @@ implementation `6518526c`. Shared-package commits precede updated consumer
 pins; each consumer records contacts `cf399b9a`, Graph `6572ee14` and DAV
 `18f636f3` where used. No package pin points to another application.
 
-BusyFiles' only corrective source changes are two release-provenance Python
+In the retained B1–B12 work, BusyFiles' only corrective source changes were two release-provenance Python
 files. Its earlier owner integration/history, application/provider/engine code
 and workspace remain intact. BusyCards' modified/untracked IDE files and helper
-`__pycache__` remain owner/generated residuals; the modified IDE patch matches
-the initial bytes exactly. All other task-owned implementation work is committed.
+`__pycache__` remain owner/generated residuals; the live IDE/generated residuals are preserved from the C1–C3 baseline. The older historical patch records its earlier session; owner/concurrent changes were not reset. All other task-owned implementation work is committed.
 
-The original seven live branches, HEADs, staged/unstaged/untracked/generated
+The historical B1–B12 seven live branches, HEADs, staged/unstaged/untracked/generated
 state, toolchains and sibling pins are preserved in `baseline.json` and the
 baseline patches in the evidence bundle. The updated BusyBox integration at
 63d0c2a was present from the start; its old delivery mismatch is closed. Final
@@ -259,3 +350,5 @@ from the tested implementation revisions. Companion `manifest.json` and
 `SHA256SUMS` carry artifact names, sizes, revisions and hashes without a
 self-referential archive hash. Source archives and evidence are supplied as
 actual accompanying bundles, not only links to local logs.
+
+The authoritative C1–C3 baseline is `lifecycle/metadata/baseline.json`, with saved lock/pin inputs. It started from BusyMax `19c6cf3e` and BusyBox `38ed8fed`, without resetting either. Current branch/HEAD/staged/unstaged/untracked records, preservation receipts and new source/release hashes are in the successor manifest. The exact unchanged BusyFiles engine/packages and BusyCards runtime/offline inputs are reused with their historical tested revisions; no engine, unchanged application or offline archive rebuild was performed.
