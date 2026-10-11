@@ -1,0 +1,303 @@
+{
+  "app": "busymax",
+  "revision": "788e8a8e4be563eecddc45f8f783e02e315ae0e2",
+  "file": "busymax-0.2.4-linux-x64.tar.gz",
+  "bytes": 17974884,
+  "sha256": "7fdc300deeba597c895309995bede7c7bfe749bff98b80426981dee287934b79",
+  "epoch": 1790899200,
+  "fresh_extraction": "/home/albert/busystack/.m2-correction/c2-preparation/extracted/busymax-linux-x64",
+  "inventory": [
+    {
+      "path": "busymax",
+      "bytes": 177208,
+      "sha256": "3272d8f87fff39d8b52961727325e6d19deffe5269265c52eeeb8c45a78ac8b8",
+      "mode": "0o755"
+    },
+    {
+      "path": "data/flutter_assets/AssetManifest.bin",
+      "bytes": 2237,
+      "sha256": "cf0d8e22b646205636c98fee219787de626cfa01a3be5cac928746ef7a3d5f30",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/FontManifest.json",
+      "bytes": 1451,
+      "sha256": "10301b33d9f1dd4815425dad6915929c0a816a8ae78b53ec50d93c14eff64a95",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/NOTICES.Z",
+      "bytes": 113612,
+      "sha256": "4998235a9296729618a02120110d280d78fe0c8eb35c067b43647dc550a29acf",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/NativeAssetsManifest.json",
+      "bytes": 131,
+      "sha256": "cac6ed54604e88a281fdf937e13069ee88123bf111e9a4af1ad323b3a561b3f0",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/assets/branding/busymax-logo-offline.svg",
+      "bytes": 3995,
+      "sha256": "9b5fce144e2af49e7db07042c9e085d4be827f48ffdb437f420e618e59e5bfe1",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/assets/branding/busymax-logo.png",
+      "bytes": 116279,
+      "sha256": "cce3f89af85b9ee9a19d7a5cd796220d4c85217c75e741b2ed32501b0db6804e",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/assets/branding/busymax-logo.svg",
+      "bytes": 3606,
+      "sha256": "b632c36862a7b7877145df67737e663ff689c527e0f298ee2f62a642402f2744",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/assets/windows/busymax_tray.ico",
+      "bytes": 97283,
+      "sha256": "81cccfbf0ca3528ac7faf50f1147f491049756bf7b0dbcdcb43f88df23c0b38c",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/assets/windows/busymax_tray_offline.ico",
+      "bytes": 72422,
+      "sha256": "e092b99ab8fe3748e5d4be94177d775c0072e67651fc024288a423b1c55f3718",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/docs/google_setup.md",
+      "bytes": 6429,
+      "sha256": "1b40235ec4310fc5402e6c3e6d2279252c3a467ec043b4c15625b81136ea6058",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/docs/microsoft_setup.md",
+      "bytes": 3946,
+      "sha256": "e6921ded5cea79d1812b5ccb9374e59ce75bf4340b7af16240655343f3a6be4f",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/fonts/MaterialIcons-Regular.otf",
+      "bytes": 13680,
+      "sha256": "cdde044486fc34ad3b3822cd198137780178c1bbc466755ecd6268bb464dd1df",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/packages/fluent_ui/assets/AcrylicNoise.png",
+      "bytes": 3241,
+      "sha256": "4f2aa94a2e345a32dae689176b86c644bef87081ff9daef8c77417731862031b",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/packages/fluent_ui/fonts/FluentIcons.ttf",
+      "bytes": 501796,
+      "sha256": "0af1385fa65e3a1f14e62adbce4f2149abc6b5d7d77fd5502b007c937fdb8e87",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/packages/fluent_ui/fonts/SegoeIcons.ttf",
+      "bytes": 451924,
+      "sha256": "8174e92a5f9a19ada80827bb3536088438c683f0cd96cb382dc8b919191cd0d4",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/packages/fluentui_system_icons/fonts/FluentSystemIcons-Filled.ttf",
+      "bytes": 2148440,
+      "sha256": "7268370576cd63208c38e1d8fc04825b9ca99c13afd014ba31ba861c52c025b6",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/packages/fluentui_system_icons/fonts/FluentSystemIcons-Regular.ttf",
+      "bytes": 2435788,
+      "sha256": "4e25444453812a6b541d95c098bcb650393c07f148f8b43c2dd848642d76cacb",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/packages/flutter_local_notifications_web/web/notifications_service_worker.js",
+      "bytes": 3407,
+      "sha256": "566f47dccc0f417f0164a3d0852334c340d0941472af43fc65ee50a314555058",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/packages/yaru/assets/fonts/Ubuntu-B.ttf",
+      "bytes": 293580,
+      "sha256": "f7de62896e7045aff7d5d1061a320ce172c411b437d350d5e80d9120ffe826eb",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/packages/yaru/assets/fonts/Ubuntu-BI.ttf",
+      "bytes": 300500,
+      "sha256": "40bf740ef47724af39349644d028b73069b5dc66beaae3a12a5f14fc0514ef10",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/packages/yaru/assets/fonts/Ubuntu-L.ttf",
+      "bytes": 282068,
+      "sha256": "f1d38342828dd095d2f9367f5d556bd028f5fd9e3a0ab6a2b44f6b970e14caee",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/packages/yaru/assets/fonts/Ubuntu-LI.ttf",
+      "bytes": 300692,
+      "sha256": "f26d36217918f02e193bdf84c102ad3f9ed5753df0418919b6695a5db1bd79d9",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/packages/yaru/assets/fonts/Ubuntu-M.ttf",
+      "bytes": 295812,
+      "sha256": "98253e483955d28147ad428fbf9fb410fcfc19a32c40f53a97b8b7c75af8465a",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/packages/yaru/assets/fonts/Ubuntu-MI.ttf",
+      "bytes": 300724,
+      "sha256": "7c9bdd9d7e19b8c12e16a0367dc02f4ce41e768aec67ecd1d239bfa900abc3a6",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/packages/yaru/assets/fonts/Ubuntu-R.ttf",
+      "bytes": 296324,
+      "sha256": "27988e92167b4a4bd2333068f2e9f1657d3ffa5a45b70acbb24a1ee2db3d0b2d",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/packages/yaru/assets/fonts/Ubuntu-RI.ttf",
+      "bytes": 300588,
+      "sha256": "424434915edc481b7a32fd455bc21a27ef9ec8db32ab676d22beefd9b2ed7a0a",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/packages/yaru/assets/fonts/UbuntuMono-Regular.ttf",
+      "bytes": 189892,
+      "sha256": "3b83b9ca3a1186b4bf8fbcbc8078b360bdb78a77a859f8eeabc9b14fb165da9a",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/packages/yaru/assets/yaru_icons.otf",
+      "bytes": 8344,
+      "sha256": "255854207149cffe97b9f84e50c810ed2277d9214a1ffd58059ca2a7850471b1",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/shaders/ink_sparkle.frag",
+      "bytes": 21856,
+      "sha256": "1fe8436a743884cb65078fe8c7b38e18f5365f2a2961270916f426fd13c604af",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/shaders/stretch_effect.frag",
+      "bytes": 17616,
+      "sha256": "bc7599dbbbaab310efe41520574138d21fb18a88c8fe4495ed79315309336f6f",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/flutter_assets/version.json",
+      "bytes": 65,
+      "sha256": "c79fb9050003da3c57c21fec9956825b771cb157c3931e48d60229c3f23a3303",
+      "mode": "0o644"
+    },
+    {
+      "path": "data/icudtl.dat",
+      "bytes": 864880,
+      "sha256": "325a86063d26334c2eabe1743cea073b612540fbf3d8fc2ef0b5708e3763a8c7",
+      "mode": "0o644"
+    },
+    {
+      "path": "lib/libapp.so",
+      "bytes": 15893384,
+      "sha256": "83d109a52b735d6ab4577492ae9c3e9d348858a997d290ec80ed964962927d6b",
+      "mode": "0o644"
+    },
+    {
+      "path": "lib/libbusymax_registration_reader.so",
+      "bytes": 17432,
+      "sha256": "4dbe3135548ac363ee46f8cc5e7d4b50d579789a2a040d0b9d14561c0539ab95",
+      "mode": "0o644"
+    },
+    {
+      "path": "lib/libdartjni.so",
+      "bytes": 157312,
+      "sha256": "d2ddb63a18fd11da91ec2be6e2334316f7243ddd8caa0482c8a1c6d64bf28cd4",
+      "mode": "0o644"
+    },
+    {
+      "path": "lib/libfile_selector_linux_plugin.so",
+      "bytes": 51672,
+      "sha256": "303d65362712c9fec8c8c4dc46d0bdc4da26857f5cb671e046e267150d79a60d",
+      "mode": "0o644"
+    },
+    {
+      "path": "lib/libflutter_linux_gtk.so",
+      "bytes": 17218152,
+      "sha256": "d57449a5c2ee39e77b9e3488f0703b165c67e0b3c554089f388db96484ae62f1",
+      "mode": "0o644"
+    },
+    {
+      "path": "lib/libflutter_secure_storage_linux_plugin.so",
+      "bytes": 187152,
+      "sha256": "d9d668c808c54d029152e9525184c615710d9b9a16a6d3c0eab03b006b991b64",
+      "mode": "0o644"
+    },
+    {
+      "path": "lib/libgtk_plugin.so",
+      "bytes": 22648,
+      "sha256": "92dd1198a7fa25003fbb4c90490715b68309c827a0f3eb8269ac774bda88f2b5",
+      "mode": "0o644"
+    },
+    {
+      "path": "lib/libsqlite3.so",
+      "bytes": 1801592,
+      "sha256": "b17729184e5a2818055ecbddd5ed6642521bfe6e56aafa472330e483c0e2e0d2",
+      "mode": "0o644"
+    },
+    {
+      "path": "lib/libsystem_theme_plugin.so",
+      "bytes": 18120,
+      "sha256": "958c4059082e89cb9881025be36e9d5533d4c57a35488fa9629738cfa4dd06a3",
+      "mode": "0o644"
+    },
+    {
+      "path": "lib/liburl_launcher_linux_plugin.so",
+      "bytes": 30768,
+      "sha256": "e26f26badfe1d71a172327ca318d3d38face504ef2bf25d6eeac807136a75cde",
+      "mode": "0o644"
+    },
+    {
+      "path": "lib/libyaru_window_linux_plugin.so",
+      "bytes": 35904,
+      "sha256": "98ff596e2ba2d61b8aecbec270206891e6c3e1868e7b75b026cadb8548427742",
+      "mode": "0o644"
+    },
+    {
+      "path": "share/applications/io.busystack.busymax.desktop",
+      "bytes": 1500,
+      "sha256": "4223c73d70157cf372884d421a34a9bfbadc0e946125bed17f1bb6a908ae0a57",
+      "mode": "0o644"
+    },
+    {
+      "path": "share/icons/hicolor/scalable/apps/io.busystack.busymax.svg",
+      "bytes": 3606,
+      "sha256": "b632c36862a7b7877145df67737e663ff689c527e0f298ee2f62a642402f2744",
+      "mode": "0o644"
+    },
+    {
+      "path": "share/metainfo/io.busystack.busymax.metainfo.xml",
+      "bytes": 10533,
+      "sha256": "3543d106bd4b1e073a442435673692854cef07ba25342c2bfdf216ef57e411c5",
+      "mode": "0o644"
+    }
+  ],
+  "verified": [
+    "fresh safe extraction",
+    "all bytes, links and executable modes; regular permissions normalized to 0644/0755",
+    "deterministic archive construction"
+  ],
+  "not_claimed": [
+    "independent cross-prefix Flutter AOT byte identity",
+    "installed confinement",
+    "physical driver qualification"
+  ]
+}

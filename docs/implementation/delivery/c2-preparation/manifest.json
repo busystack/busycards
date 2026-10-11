@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "status": "Actual independently extractable C2 correction payloads; documentation-only handoff, never a BusyCards runtime dependency.",
+  "busymax_implementation_commit": "788e8a8e4be563eecddc45f8f783e02e315ae0e2",
+  "busymax_tree": "bba83dd5c534ab05ed1c28a24d85de22942821a2",
+  "artifact_source_revision": "788e8a8e4be563eecddc45f8f783e02e315ae0e2",
+  "artifacts": [
+    {
+      "file": "busymax-0.2.4-source.tar.gz",
+      "bytes": 5998570,
+      "sha256": "c6431035581860ab05e38cc115d81fcea1d8737354ff3ad423ce4902b194f94a"
+    },
+    {
+      "file": "busymax-0.2.4-linux-x64.tar.gz",
+      "bytes": 17974884,
+      "sha256": "7fdc300deeba597c895309995bede7c7bfe749bff98b80426981dee287934b79"
+    },
+    {
+      "file": "busymax-0.2.4-linux-x64-symbols.tar.gz",
+      "bytes": 2440284,
+      "sha256": "922dff4f37aa3d9a6aaf7f084579c46165df61590d90121a8846f62756ce6ff8"
+    },
+    {
+      "file": "m2-corrective-evidence.tar.gz",
+      "bytes": 1481400,
+      "sha256": "42f2d265664f5e540aff0f64c4d45262b93e1ebba9e7f1cbec433f00f9259711"
+    },
+    {
+      "file": "busymax-source-manifest.json",
+      "bytes": 1078,
+      "sha256": "8f8b0cb818aa674ce85acf7da2347f0f626ed3f0bf7ec360b405c79ed1a4a48c"
+    },
+    {
+      "file": "busymax-linux-x64-manifest.json",
+      "bytes": 10402,
+      "sha256": "2d4a08b54953a32873f66a2b61b7387527c58d9d965e0bb9a7d0baf67a54727e"
+    },
+    {
+      "file": "busymax-linux-x64-symbols-manifest.json",
+      "bytes": 901,
+      "sha256": "6ec4261092e83fa349d10abf11e712c0aeaa8330dfad4bbe2c343689072d5148"
+    },
+    {
+      "file": "evidence-manifest.json",
+      "bytes": 641,
+      "sha256": "deb82d74aa06edd35f96fdd6360d2ab0e19c50c404938bd037eb309fb2b01857"
+    }
+  ],
+  "open_gates": [
+    "authorized disposable external providers/registrations absent",
+    "Windows native host absent",
+    "reference full interactive Wayland comparison and exhaustive physical/rendered matrix not verified",
+    "physical Android/production signing unverified",
+    "Snap human store declaration review and strict installed confinement unverified",
+    "Historical reference debug exit139 under default and Mesa remains failed/unresolved despite exact-binary retests exiting0; physical/default-driver qualification remains unverified",
+    "Corrected-tree Android native unit/lint and APK/AAB registration-mode rebuilds remain blocked before native tests by unavailable existing Gradle/plugin prerequisites: latest offline failure is system_theme com.android.tools.build:gradle:4.1.0. No dependency downgrade/change was made; no new Android payload is delivered. Earlier native/emulator/test-signed artifacts remain historical for their exact tested inputs.",
+    "Corrected-tree BusyBox standard core24 Snap rebuild failed before application compilation installing gnome-46-2404-sdk latest/stable (exit 1). Earlier public APT/Mesa download failures and relay repairs are retained. Public locked Pub inputs and signed Mesa build prerequisite were verified in the task-only container; they do not constitute a package pass. No new Snap is delivered; old package/review evidence remains historical."
+  ],
+  "current_android_snap_payload": false,
+  "historical_android_source_revision": "19c6cf3e753f590ec73510988a23b4c4b81f74ec",
+  "historical_snap_source_revision": "38ed8fed455ad1a537b3bbefd21bf7bec2376774",
+  "scope": "The requested source-only review handoff includes actual archives rather than only local path references. Canonical identical payloads are under .m2-correction/delivery/c2-preparation-final. This tracked documentation copy is for independent inspection; production assets/packages do not consume it."
+}

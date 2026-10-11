@@ -1,0 +1,27 @@
+{
+  "app": "busymax",
+  "revision": "788e8a8e4be563eecddc45f8f783e02e315ae0e2",
+  "file": "busymax-0.2.4-linux-x64-symbols.tar.gz",
+  "bytes": 2440284,
+  "sha256": "922dff4f37aa3d9a6aaf7f084579c46165df61590d90121a8846f62756ce6ff8",
+  "epoch": 1790899200,
+  "fresh_extraction": "/home/albert/busystack/.m2-correction/c2-preparation/extracted/busymax-linux-x64-symbols",
+  "inventory": [
+    {
+      "path": "app.linux-x64.symbols",
+      "bytes": 8708944,
+      "sha256": "ed45deffc1ca785c3fe27ffd34eb4f10135f3449c51a1d5f50aa08e728537381",
+      "mode": "0o644"
+    }
+  ],
+  "verified": [
+    "fresh safe extraction",
+    "all bytes, links and executable modes; regular permissions normalized to 0644/0755",
+    "deterministic archive construction"
+  ],
+  "not_claimed": [
+    "independent cross-prefix Flutter AOT byte identity",
+    "installed confinement",
+    "physical driver qualification"
+  ]
+}

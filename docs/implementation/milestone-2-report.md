@@ -1,14 +1,57 @@
 # Milestone 2 corrective implementation and acceptance
 
-Final lifecycle corrections C1–C3 following the completed B1–B12 assignment, **10 October 2026**. This report supersedes the
+Final lifecycle corrections C1–C3, including the C2 preparation-failure follow-up, **11 October 2026**. This report supersedes the
 6 October status, preserved beside it as dated historical documents. The
 seven repositories remain independent. Application databases, credentials,
 authentication, UI and lifecycle remain application-owned. BusyFiles has no
 contacts functionality. No external account, OAuth registration, push,
 publication or installation over an owner's application was performed.
 
+This follow-up newly builds BusyMax source/Linux/symbol payloads and an actual evidence archive. It builds no current Android or BusyBox Snap payload. The successor delivery guide, manifest and checksums are under `.m2-correction/delivery/c2-preparation-final`; byte-identical inspectable payloads are included in `docs/implementation/delivery/c2-preparation`. Historical Android/Snap successes remain tied to their original source revisions.
 
-## C1–C3 final lifecycle corrections
+
+## C2 preparation-failure follow-up — 11 October 2026
+
+The reviewed `40b3ab6c` preparation removed the in-memory provider before its mutation journal and disabled-account transactions. A rolled-back write left the durable account enabled but `changed` null, so recovery skipped rebinding. The new deterministic BEFORE/AFTER SQL-trigger regression fails in all four Google/Microsoft cases with `account-not-connected` on ordinary synchronization. Parent deletion and credentials remain healthy.
+
+The existing removal receipt now records original account/binding state and partial detachment separately from a committed disable. `changed` is set after the awaited store transaction commits. Recovery retains C1 ordering and checks ownership, parent identity/grants/authorization generation and exact contact state; it finishes existing uncertain-mutation journal handling before restoring the prior binding. A failed journal recovery retains pending/uncertain work, exposes `contacts-removal-recovery-required`, blocks replay and returns the original preparation failure. No consent, permission upgrade, credential copying, unconditional enabled repair, production timeout or shared-package change was added.
+
+BusyMax commit `788e8a8e4be563eecddc45f8f783e02e315ae0e2`; tree `bba83dd5c534ab05ed1c28a24d85de22942821a2`; complete final suite **3,579 passed / 10 existing live-provider skips / zero failures**. The 67-case lifecycle suite and 345 focused authorization/contacts/database/shutdown cases pass. Touched-file format, analysis and platform-boundary checks pass. Exact commands, initial HEAD, stable file fingerprints, exits, counts and log hashes are in machine results.
+
+Fresh corrected-source Linux release/debug builds, the workflow GTK bridge integration test, native clock/weekday/GTK checks, registration-helper and registration-reader tests, desktop/AppStream metadata and runtime asset checks pass. The corrected release and normal debug application each start and close with exit 0 under private Xvfb/default and explicitly requested Mesa rendering, after schedule startup settles. Exact binary/asset hashes and captures are delivered. These checks do not qualify physical drivers or complete interactive Wayland comparison. Historical reference debug default/Mesa exit 139 remains failed/unresolved despite later passing exact-binary retests.
+
+The affected contract was checked against resolved Drift 2.35.0 and its [transaction guidance](https://drift.simonbinder.eu/dart_api/transactions/): awaited SQL transaction completion determines durable success; rollback does not restore an in-memory provider binding. Existing provider/OAuth references are unchanged.
+
+| Current receipt | Exit | Log in delivered archive |
+|---|---:|---|
+| `busymax-c2-preparation-red` | 1 | `current/commands/busymax-c2-preparation-red.log` |
+| `busymax-c2-preparation-red-observed` | 1 | `current/commands/busymax-c2-preparation-red-observed.log` |
+| `busymax-locked-prerequisites-complete` | 0 | `current/commands/busymax-locked-prerequisites-complete.log` |
+| `busymax-c2-preparation-green` | 0 | `current/commands/busymax-c2-preparation-green.log` |
+| `busymax-c2-format-analysis-platform` | 1 | `current/commands/busymax-c2-format-analysis-platform.log` |
+| `busymax-c2-focused` | 0 | `current/commands/busymax-c2-focused.log` |
+| `busymax-c2-final-checks` | 0 | `current/commands/busymax-c2-final-checks.log` |
+| `busymax-c2-sdk-contract` | 0 | `current/commands/busymax-c2-sdk-contract.log` |
+| `busymax-locked-prerequisites` | 1 | `current/commands/busymax-locked-prerequisites.log` |
+| `busymax-c2-source-archive` | 1 | `current/commands/busymax-c2-source-archive.log` |
+| `busymax-c2-fresh-prerequisites` | 1 | `current/commands/busymax-c2-fresh-prerequisites.log` |
+| `busymax-c2-full-captured-final` | 0 | `current/commands/busymax-c2-full-captured-final.log` |
+| `busymax-c2-source-archive-final` | 0 | `current/commands/busymax-c2-source-archive-final.log` |
+| `busymax-c2-fresh-prerequisites-final` | 0 | `current/commands/busymax-c2-fresh-prerequisites-final.log` |
+| `busymax-c2-linux-fresh-final` | 1 | `current/commands/busymax-c2-linux-fresh-final.log` |
+| `busymax-c2-linux-fresh-verified` | 1 | `current/commands/busymax-c2-linux-fresh-verified.log` |
+| `busymax-c2-release-archive` | 0 | `current/commands/busymax-c2-release-archive.log` |
+| `busymax-c2-linux-fresh-completed` | 0 | `current/commands/busymax-c2-linux-fresh-completed.log` |
+| `busymax-c2-symbols-archive` | 0 | `current/commands/busymax-c2-symbols-archive.log` |
+| `busymax-c2-candidate-release-default-settled` | 241 | `current/commands/busymax-c2-candidate-release-default-settled.log` |
+| `busymax-c2-candidate-release-default-settled-captured` | 0 | `current/commands/busymax-c2-candidate-release-default-settled-captured.log` |
+| `busymax-c2-candidate-release-mesa-settled-captured` | 0 | `current/commands/busymax-c2-candidate-release-mesa-settled-captured.log` |
+| `busymax-c2-candidate-debug-default-settled-captured` | 0 | `current/commands/busymax-c2-candidate-debug-default-settled-captured.log` |
+| `busymax-c2-candidate-debug-mesa-settled-captured` | 0 | `current/commands/busymax-c2-candidate-debug-mesa-settled-captured.log` |
+
+The initial complete suite reported 3,579 passes / ten skips, but its wrapper exited 143 before sealing the subprocess result. That interrupted receipt is retained and is not used as a zero-exit gate; a captured final run supplies the authoritative result. The pre-build location guard initially refused a localization output directory created by fresh generation. A follow-up harness attempt exposed a shadowed Python import. Both failed before application build; the harness was corrected and those task-owned generated prerequisites preserved on the private temporary filesystem. The initial native-close QA job was terminal-stopped in `stty size` before launching the application; the stopped task-owned job was explicitly terminated, and corrected capture runs use noninteractive stdin. This was not an observed app or driver crash. Pre-commit source/fresh-prerequisite packaging attempts were rejected before artifact creation while commit eligibility remained unsealed; final committed-source packaging passes. The first test compile error and test-only lint findings remain recorded, followed by corrected passing gates. The isolated SDK bootstrap was interrupted once after a clone timestamp mismatch; exact pinned cache metadata was restored. No shared SDK/driver/runtime was changed. The Android cache probe still lacks a resolvable AGP 4.1.0 POM/closure; no repeated unavailable-prerequisite Gradle run or current Android package is claimed. BusyBox Snap remains blocked at its prior GNOME SDK install failure; BusyBox is unchanged.
+
+## Historical 10 October C1–C3 verification (exact tested inputs)
 
 | Item | Root cause and changed production boundary | Final regression outcome |
 |---|---|---|
@@ -330,13 +373,11 @@ archives and manifests reference the new corrected implementation. No history
 rewrite, reset, clean, destructive branch change or indiscriminate staging was
 used. Previously unattributed BusyFiles work was preserved.
 
-Final delivery contains source archives for Box, Max, Files and Cards (with
-exact declared sibling dependencies), tested Linux release bundles, the final
-BusyBox Snap, both test-signed Android APK/AAB registration modes, final Files
-portable/DEB/RPM/source-RPM/SBOM/provenance, matching exported engine inputs and
-symbols, Cards verified public offline inputs, and the actual corrective
-evidence archive. Companion manifest/SHA256SUMS records each exact SHA-256,
-size, source revision and relevant tested build basis. Fresh extraction checks
+Newly built C2 delivery artifacts are BusyMax source, Linux release and split symbols from the corrected tested revision above, the documentation-only BusyCards source, and the actual successor evidence archive. Actual BusyMax payloads and evidence are also included in the committed `docs/implementation/delivery/c2-preparation` handoff so source-only review exports contain inspectable files. They have source-revision manifests and verified checksums.
+
+Reused artifacts are separately identified: unchanged BusyBox source/Linux/symbols at `5aeba272bde4f6798fadaa394c037e8b7aaf74e6`; BusyFiles portable/DEB/RPM/source-RPM/SBOM/provenance and attested engine/symbols at `14c2853cc089345d2b1ed053fc0d34b1a7477110`; BusyCards runtime/public offline inputs at `6518526cb624a859f126f85a0ccf3e020a265190`. Historical BusyBox Snap is tied to `38ed8fed455ad1a537b3bbefd21bf7bec2376774`; historical test-signed Android APK/AAB modes are tied to BusyMax `19c6cf3e753f590ec73510988a23b4c4b81f74ec`. Those successful historical runs remain successful for those inputs; none of those binaries is claimed to contain this C2 correction. No current Android or Snap payload was rebuilt. Exact files/hashes/source revisions and remaining gates are in the successor manifest.
+
+Fresh extraction checks
 verify relative paths, symlinks, execute modes, licenses, helper/runtime hashes,
 native libraries and metadata. Generated profiles, credentials, SDK/cache/IDE/
 Git payloads are excluded; public offline dependency inputs are intentional,

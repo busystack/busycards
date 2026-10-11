@@ -1,0 +1,10 @@
+{
+  "file": "m2-corrective-evidence.tar.gz",
+  "bytes": 1481400,
+  "sha256": "42f2d265664f5e540aff0f64c4d45262b93e1ebba9e7f1cbec433f00f9259711",
+  "entries": 151,
+  "fresh_extraction_verified": true,
+  "predecessor_evidence_sha256": "7e6f8a544c8ddfc602638560274d9f6a77c19a6da24e40d9d850fe90323305c2",
+  "source_revision": "788e8a8e4be563eecddc45f8f783e02e315ae0e2",
+  "scope": "Actual current command logs, receipts, source patches, regression inputs, pins and native captures; selected verified unchanged BusyBox and unresolved reference-close evidence. No real credentials/personal data, profiles, keys, SDK/caches or runtime payloads."
+}
