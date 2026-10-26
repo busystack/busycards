@@ -51,3 +51,11 @@ Run a relocatable release from its extracted directory with `./busycards`. It do
 Evidence and precise remaining gates: [Milestone 1 report](docs/implementation/milestone-1-report.md), [provider references](docs/implementation/provider-references.md), [read-only audit](docs/implementation/read-only-verification.md), [Milestone 2 handoff](docs/implementation/milestone-2-integration.md). No existing app was migrated. No live provider resource is authorized or tested. Fixtures, widget/native execution and live acceptance are reported separately. Milestone 2 requires a subsequent explicit authorization.
 
 Apache-2.0, with BusyStack donor attributions in NOTICE; third-party licenses and the derived suite-style BusyCards icon are documented in [licenses](docs/implementation/licenses.md).
+
+Dependency verification uses `python3 tool/verify_upstream_packages.py` after
+locked package resolution. It checks the approved Flutter/Dart source revision,
+complete Dart SDK and present desktop/compiler cache files against official
+publisher identities, and restored package source against the checksum-derived
+`tool/upstream_packages.json` inventory. It never repairs or modifies installed
+software. Reviewed dependency/toolchain upgrades must update these publisher
+identities; matching version strings alone do not establish unchanged source.

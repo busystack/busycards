@@ -57,6 +57,9 @@ def main():
         print(label + ': exit ' + str(code), flush=True)
         (output / 'results.json').write_text(json.dumps(results, indent=2) + '\n')
     resolution = ['pub', 'get', '--enforce-lockfile'] + (['--offline'] if args.offline else [])
+    run('official-sdk', 'busycards', [sys.executable, 'tool/verify_upstream_packages.py', '--sdk', flutter.parent.parent, '--sdk-only'])
+    if results[-1]['exit']:
+        return 1
     run('toolchain', 'busycards', [flutter, '--version'])
     for name in NAMES[:3]:
         run(name + '-pub', name, [dart, *resolution])
@@ -67,6 +70,10 @@ def main():
     if not args.packages_only:
         run('offline-input-contract', 'busycards', [sys.executable, '-W', 'error::ResourceWarning', 'tool/test_prepare_offline.py', '-v'])
         run('busycards-pub', 'busycards', [flutter, *resolution])
+        run('official-dependencies', 'busycards', [sys.executable, 'tool/verify_upstream_packages.py', '--sdk', flutter.parent.parent])
+        if results[-1]['exit']:
+            return 1
+        run('official-dependency-tests', 'busycards', [sys.executable, '-m', 'unittest', 'discover', '-s', 'tool', '-p', 'test_upstream_packages.py'])
         run('localization', 'busycards', [flutter, 'gen-l10n'])
         run('busycards-format', 'busycards', [dart, 'format', '--output=none', '--set-exit-if-changed', 'lib', 'test', 'tool'])
         run('busycards-analyze', 'busycards', [flutter, 'analyze', '--no-pub'])
