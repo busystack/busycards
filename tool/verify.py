@@ -81,7 +81,9 @@ def main():
         run('helper-protocol', 'busycards', [dart, 'run', 'tool/helper_protocol_contract.dart', 'native/microsoft_auth_helper/target/dist/busycards-microsoft-auth'])
         # The standard Flutter suite includes lifecycle tests against the
         # packaged helper, so a clean extraction must build it first.
-        run('busycards-test', 'busycards', [flutter, 'test', '--no-pub', '--reporter=expanded'])
+        # Serialize encrypted-store/helper fixtures to avoid competing with
+        # widget animation polling within the existing real-time timeouts.
+        run('busycards-test', 'busycards', [flutter, 'test', '--no-pub', '--reporter=expanded', '--concurrency=1'])
         run('store-contract', 'busycards', [dart, 'run', 'tool/store_contract.dart', '50000'])
         run('stream-contract', 'busycards', [dart, 'run', 'tool/stream_contract.dart'])
         for mode in ('debug', 'release'):
