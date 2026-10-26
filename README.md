@@ -1,5 +1,7 @@
 # BusyCards
 
+Source: [busystack/busycards](https://github.com/busystack/busycards), branch `v0.0.1`.
+
 Standalone Linux contacts application consuming busystack_contacts, busystack_dav and busystack_graph in production paths. Google People personal contacts, Microsoft personal contacts/folders and generic CardDAV/Nextcloud address books use a private encrypted SQLCipher directory. No other BusyStack application, shared database or daemon is required.
 
 The ordinary empty shell opens without an onboarding wizard. Add sources in Settings; configure BusyCards-owned Google Desktop and Microsoft public-client registrations there. Lookup-only connections request read scopes; editing requests contacts write scopes. Generic CardDAV accepts its HTTPS server, DAV login identity and app password. Nextcloud uses system-browser Login Flow v2 and the returned loginName/server, then CardDAV discovery. Credentials and the database key use OS Secret Service under BusyCards' own profile/account namespaces.
@@ -24,7 +26,14 @@ python3 tool/verify.py --flutter /path/to/flutter/bin/flutter
 python3 tool/package.py
 ```
 
-The verifier explicitly permits only these four targets, writes logs/exit codes under `validation/commands`, and never searches a suite workspace or invokes donor scripts. It performs locked resolution, non-mutating format checks, analysis/tests/public examples, localization, Java/native/protocol/cache checks, durable-store/stream harnesses and Linux debug/release builds. Failures remain failures even if an independent release artifact builds. The GitHub Actions workflow accepts an owner-approved source-bundle URL and SHA-256 and reconstructs the same four siblings; no donor checkout is involved and no workflow was published/run remotely.
+The verifier explicitly permits only these four targets, writes logs/exit codes under `validation/commands`, and never searches a suite workspace or invokes donor scripts. It performs locked resolution, non-mutating format checks, analysis/tests/public examples, localization, Java/native/protocol/cache checks, durable-store/stream harnesses and Linux debug/release builds. Failures remain failures even if an independent release artifact builds. CI materializes the manifest-pinned sibling checkouts to verify the current branch. Its optional source-bundle job reconstructs the same four siblings from an owner-approved HTTPS URL and SHA-256.
+
+For Git checkouts, `tool/shared_dependencies.json` records the canonical package
+URLs and exact tested commits. Contacts develops on `busystack_contacts/main`;
+the manifest pins that tested revision while Pub resolves the sibling path.
+Run `python3 tool/checkout_shared_dependencies.py` before verification; it
+rejects a wrong origin, revision, or dirty sibling. Source archives already
+contain the selected package trees and need no Git checkout.
 
 For the supplied portable dependency-input bundle, extract it separately, then:
 

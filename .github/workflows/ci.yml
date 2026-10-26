@@ -1,7 +1,7 @@
 name: BusyCards current source and source-bundle validation
 on:
   push:
-    branches: [main]
+    branches: [v0.0.1]
   pull_request:
   workflow_dispatch:
     inputs:
